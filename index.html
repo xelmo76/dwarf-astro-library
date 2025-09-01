@@ -5,14 +5,19 @@
   <title>Astro Dashboard — DWARF 3</title>
   <style>
     body { background:#0a0f25; color:white; font-family:sans-serif; margin:20px; }
-    .card { background:#141a33; padding:20px; border-radius:8px; margin:10px 0; }
     h1 { color:#9fd1ff; }
-    pre { white-space: pre-wrap; word-wrap: break-word; }
+    table { width:100%; border-collapse:collapse; margin-top:20px; }
+    th, td { padding:8px 12px; border:1px solid #333; text-align:left; }
+    th { background:#1c274d; color:#9fd1ff; }
+    tr:nth-child(even) { background:#141a33; }
+    tr:nth-child(odd) { background:#1a2140; }
+    .total-row { background:#233366; font-weight:bold; }
+    .warning { color:#ff5555; font-weight:bold; padding:15px; }
   </style>
 </head>
 <body>
   <h1>Astro Dashboard — DWARF 3</h1>
-  <div id="content" class="card">Caricamento dati...</div>
+  <div id="content">Caricamento dati...</div>
 
   <script>
     async function loadLibrary() {
@@ -21,10 +26,54 @@
         const res = await fetch(url + "?t=" + Date.now()); // evita cache
         if (!res.ok) throw new Error("HTTP " + res.status);
         const data = await res.json();
-        document.getElementById('content').innerHTML =
-          "<h2>Dati libreria</h2><pre>" + JSON.stringify(data, null, 2) + "</pre>";
+
+        // Se libreria vuota
+        if (Object.keys(data).length === 0) {
+          document.getElementById('content').innerHTML =
+            "<div class='warning'>⚠ Nessun dato presente in libreria.json</div>";
+          return;
+        }
+
+        let html = "<table><tr><th>Target</th><th>Exp/Gain</th><th>Frames</th><th>Integrazione (s)</th><th>Integrazione (ore)</th><th>Ultimo aggiornamento</th></tr>";
+
+        for (const target in data) {
+          let totalFrames = 0;
+          let totalSeconds = 0;
+          let lastUpdated = "";
+
+          for (const combo in data[target]) {
+            const entry = data[target][combo];
+            const hours = (entry.integration_seconds / 3600).toFixed(2);
+            totalFrames += entry.frames;
+            totalSeconds += entry.integration_seconds;
+            lastUpdated = entry.last_updated;
+
+            html += `<tr>
+                      <td>${target}</td>
+                      <td>${combo}</td>
+                      <td>${entry.frames}</td>
+                      <td>${entry.integration_seconds}</td>
+                      <td>${hours}</td>
+                      <td>${entry.last_updated}</td>
+                    </tr>`;
+          }
+
+          const totalHours = (totalSeconds / 3600).toFixed(2);
+          html += `<tr class="total-row">
+                    <td>${target}</td>
+                    <td>TOTALE</td>
+                    <td>${totalFrames}</td>
+                    <td>${totalSeconds}</td>
+                    <td>${totalHours}</td>
+                    <td>${lastUpdated}</td>
+                  </tr>`;
+        }
+
+        html += "</table>";
+        document.getElementById('content').innerHTML = html;
       } catch(e) {
-        document.getElementById('content').innerText = "Errore nel caricamento: " + e;
+        document.getElementById('content').innerHTML =
+          "<div class='warning'>Errore nel caricamento: " + e + "</div>";
       }
     }
     loadLibrary();
