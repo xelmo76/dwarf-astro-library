@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Astro Dashboard — DWARF 3</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <style>
+    body{margin:0;font-family:sans-serif;background:#0b1020;color:#e6e9f2}
+    header{padding:16px;background:#11182e;position:sticky;top:0;z-index:10}
+    h1{margin:0;font-size:20px}
+    .controls{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+    input,button{padding:8px;border-radius:6px;border:none}
+    input{flex:1}
+    button{background:#7aa2ff;color:#fff;cursor:pointer}
+    main{padding:16px;display:grid;grid-template-columns:2fr 1fr;gap:16px}
+    @media(max-width:800px){main{grid-template-columns:1fr}}
+    section{background:#11182e;padding:16px;border-radius:12px}
+    .target{background:#1a223b;padding:12px;border-radius:8px;margin-bottom:12px}
+    .target h3{margin:0 0 8px;font-size:18px;display:flex;justify-content:space-between}
+    .combos{font-size:14px}
+    .badge{background:#7aa2ff33;padding:2px 6px;border-radius:4px;margin-right:6px}
+    .meta{color:#9aa3b2}
+    .new{color:#90ee90;font-weight:bold}
+    footer{padding:12px;text-align:center;color:#9aa3b2}
+    canvas{width:100%!important;height:auto!important}
+    .error{color:#ffb3b3;background:#3b0f0f;padding:8px;border-radius:6px}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Astro Dashboard — DWARF 3</h1>
+    <div class="controls">
+      <input id="jsonUrl" type="url" placeholder="URL libreria.json (RAW GitHub)">
+      <button id="loadBtn">Carica</button>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <h2>📚 Libreria</h2>
+      <div id="targets"></div>
+    </section>
+
+    <section>
+      <h2>📊 Totali</h2>
+      <canvas id="totalsChart"></canvas>
+      <div id="lastUpdated" class="meta"></div>
+    </section>
+  </main>
+
+  <footer>
+    I FITS restano solo in locale — qui vedi i metadati dal tuo <code>libreria.json</code>.
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script>
+    const DEFAULT_JSON_URL = "https://raw.githubusercontent.com/username/repo/main/libreria.json";
+    const qs = new URLSearchParams(location.search);
+    const initialUrl = qs.get("data") || DEFAULT_JSON_URL;
+
+    const $url = document.getElementById('jsonUrl');
+    const $load = document.getElementById('loadBtn');
+    const $targets = document.getElementById('targets');
+    const $lastUpdated = document.getElementById('lastUpdated');
+    let chart = null;
+
+    function formatHMS(seconds){
+      const h=Math.floor(seconds/3600);
+      const m=Math.floor((seconds%3600)/60);
+      const s=seconds%60;
+      if(h) return `${h}h ${m}m ${s}s`;
+      if(m) return `${m}m ${s}s`;
+      return `${s}s`;
+    }
+
+    function aggregateTotals(data){
+      const totals={}; let globalLast=null;
+      for(const [target,combos] of Object.entries(data)){
+        let sum=0;
+        for(const [k,v] of Object.entries(combos)){
+          sum+=v.integration_seconds||0;
+          if(v.last_updated){
+            const d=new Date(v.last_updated);
+            if(!globalLast||d>globalLast) globalLast=d;
+          }
+        }
+        totals[target]=sum;
+      }
+      return {totals,globalLast};
+    }
+
+    function renderTargets(data){
+      $targets.innerHTML="";
+      const sorted=Object.keys(data).sort();
+      sorted.forEach(target=>{
+        const combos=data[target];
+        const div=document.createElement("div");
+        div.className="target";
+        const tot=Object.values(combos).reduce((a,v)=>a+v.integration_seconds,0);
+        div.innerHTML=`<h3><span>${target}</span><span class="meta">${formatHMS(tot)}</span></h3>`;
+        const combosDiv=document.createElement("div");
+        combosDiv.className="combos";
+        Object.entries(combos).forEach(([k,v])=>{
+          const frames=v.frames||0;
+          const integ=v.integration_seconds||0;
+          const upd=v.last_updated?`<span class="meta"> • upd ${v.last_updated}</span>`:"";
+          const newFrames=v.new_frames||0;
+          const nf=newFrames?`<span class="new"> +${newFrames} nuovi</span>`:"";
+          combosDiv.innerHTML+=`
+            <div>
+              <span class="badge">${k}</span>
+              <span class="meta">frames: ${frames}</span>
+              <span class="meta"> • integrazione: ${formatHMS(integ)}</span>
+              ${upd}${nf}
+            </div>`;
+        });
+        div.appendChild(combosDiv);
+        $targets.appendChild(div);
+      });
+    }
+
+    function renderChart(totals){
+      const labels=Object.keys(totals);
+      const values=labels.map(k=>totals[k]);
+      if(chart) chart.destroy();
+      chart=new Chart(document.getElementById("totalsChart"),{
+        type:"bar",
+        data:{labels,datasets:[{label:"Integrazione totale (s)",data:values}]},
+        options:{
+          responsive:true,
+          plugins:{tooltip:{callbacks:{label:ctx=>`${formatHMS(ctx.parsed.y)} (${ctx.parsed.y}s)`}}},
+          scales:{y:{beginAtZero:true,ticks:{callback:v=>formatHMS(v)}}}
+        }
+      });
+    }
+
+    async function loadData(url){
+      try{
+        const res=await fetch(url,{cache:"no-store"});
+        if(!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data=await res.json();
+        renderTargets(data);
+        const {totals,globalLast}=aggregateTotals(data);
+        renderChart(totals);
+        $lastUpdated.textContent=globalLast?`Ultimo aggiornamento: ${globalLast.toISOString().slice(0,10)}`:"";
+      }catch(err){
+        $targets.innerHTML=`<div class="error">${err}</div>`;
+        if(chart) chart.destroy();
+      }
+    }
+
+    $url.value=initialUrl;
+    $load.onclick=()=>loadData($url.value.trim());
+    window.addEventListener("DOMContentLoaded",()=>loadData($url.value.trim()));
+  </script>
+</body>
+</html>
