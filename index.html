@@ -20,6 +20,12 @@
   <div id="content">Caricamento dati...</div>
 
   <script>
+    function formatTimeHM(seconds) {
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      return `${h}h ${m}m`;
+    }
+
     async function loadLibrary() {
       const url = "https://raw.githubusercontent.com/xelmo76/dwarf-astro-library/main/libreria.json";
       try {
@@ -27,14 +33,13 @@
         if (!res.ok) throw new Error("HTTP " + res.status);
         const data = await res.json();
 
-        // Se libreria vuota
         if (Object.keys(data).length === 0) {
           document.getElementById('content').innerHTML =
             "<div class='warning'>⚠ Nessun dato presente in libreria.json</div>";
           return;
         }
 
-        let html = "<table><tr><th>Target</th><th>Exp/Gain</th><th>Frames</th><th>Integrazione (s)</th><th>Integrazione (ore)</th><th>Ultimo aggiornamento</th></tr>";
+        let html = "<table><tr><th>Target</th><th>Exp/Gain</th><th>Frames</th><th>Integrazione (s)</th><th>Integrazione (h:m)</th><th>Ultimo aggiornamento</th></tr>";
 
         for (const target in data) {
           let totalFrames = 0;
@@ -43,7 +48,6 @@
 
           for (const combo in data[target]) {
             const entry = data[target][combo];
-            const hours = (entry.integration_seconds / 3600).toFixed(2);
             totalFrames += entry.frames;
             totalSeconds += entry.integration_seconds;
             lastUpdated = entry.last_updated;
@@ -53,18 +57,18 @@
                       <td>${combo}</td>
                       <td>${entry.frames}</td>
                       <td>${entry.integration_seconds}</td>
-                      <td>${hours}</td>
+                      <td>${formatTimeHM(entry.integration_seconds)}</td>
                       <td>${entry.last_updated}</td>
                     </tr>`;
           }
 
-          const totalHours = (totalSeconds / 3600).toFixed(2);
+          const totalFormatted = formatTimeHM(totalSeconds);
           html += `<tr class="total-row">
                     <td>${target}</td>
                     <td>TOTALE</td>
                     <td>${totalFrames}</td>
                     <td>${totalSeconds}</td>
-                    <td>${totalHours}</td>
+                    <td>${totalFormatted}</td>
                     <td>${lastUpdated}</td>
                   </tr>`;
         }
