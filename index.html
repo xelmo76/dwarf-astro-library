@@ -31,13 +31,21 @@
       .badge-exp { background:rgba(135,176,255,0.15); color:#d5e4ff; border:1px solid rgba(135,176,255,0.25) }
       .badge-gain { background:rgba(255,255,255,0.06); color:#dbe6ff; border:1px solid var(--border-subtle) }
       .empty { border:1px dashed var(--border-subtle); background:rgba(255,255,255,0.02); }
+
+      /* Responsive fix per mobile: navbar colonna */
+      @media (max-width: 576px) {
+        .navbar .container { flex-direction: column !important; align-items: flex-start !important; gap: .5rem; }
+        .navbar .d-flex { flex-wrap: wrap !important; width: 100%; }
+        #targetFilter { flex: 1 1 auto; min-width: 100%; }
+        #lastUpdated, #btnRefresh { width: 100%; text-align: left; }
+      }
     </style>
   </head>
   <body>
     <nav class="navbar sticky-top">
       <div class="container py-2 d-flex justify-content-between align-items-center gap-3">
         <span class="fs-4 fw-semibold">DWARF 3 · Libreria Astrofotografia</span>
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
           <label class="text-light">Target:</label>
           <select id="targetFilter" class="form-select form-select-sm bg-dark text-light" style="min-width:180px"></select>
           <span id="lastUpdated" class="badge text-bg-dark border">Ultimo aggiornamento: —</span>
@@ -89,7 +97,6 @@
       function formatNumber(n){return new Intl.NumberFormat('it-IT').format(n);}
       function pickColors(n){const c=[];for(let i=0;i<n;i++){const hue=Math.round((i*137.508)%360);c.push(`hsl(${hue} 70% 60% / 0.85)`);}return c;}
 
-      // Normalizza: top-level = target, sottochiavi = "EXP_60_GAIN_60"
       function normalizeLibrary(raw){
         if(!raw||typeof raw!=="object") return {lastUpdated:undefined,targets:[]};
         if(Object.keys(raw).length===0) return {lastUpdated:undefined,targets:[]};
@@ -99,129 +106,70 @@
           const combos=[];
           for(const [key,val] of Object.entries(node)){
             if(!val || typeof val!=="object") continue;
-            // Supporta chiavi tipo EXP_60_GAIN_60
-            let exp=0, gain=0;
-            const m = key.match(/EXP[_\s]?([\d.]+).*GAIN[_\s]?(\d+)/i);
-            if(m){ exp = Number(m[1]); gain = Number(m[2]); }
-            const frames = Number(val.frames||val.count||0);
-            let integ = Number(val.integration_seconds||val.integration_s||val.integration||0);
-            if(!integ && exp && frames) integ = exp*frames;
+            let exp=0,gain=0;
+            const m=key.match(/EXP[_\s]?([\d.]+).*GAIN[_\s]?(\d+)/i);
+            if(m){exp=Number(m[1]);gain=Number(m[2]);}
+            const frames=Number(val.frames||0);
+            let integ=Number(val.integration_seconds||val.integration_s||val.integration||0);
+            if(!integ&&exp&&frames) integ=exp*frames;
             if(val.last_updated) dates.push(val.last_updated);
-            if(frames>0 || integ>0) combos.push({exp,gain,frames,integration_s:integ});
+            if(frames>0||integ>0) combos.push({exp,gain,frames,integration_s:integ});
           }
-          const total_frames = combos.reduce((a,c)=>a+c.frames,0);
-          const total_integration_s = combos.reduce((a,c)=>a+c.integration_s,0);
+          const total_frames=combos.reduce((a,c)=>a+c.frames,0);
+          const total_integration_s=combos.reduce((a,c)=>a+c.integration_s,0);
           if(combos.length) targets.push({name,combos,total_frames,total_integration_s});
         }
-        // Max last_updated come ISO (se è AAAA-MM-GG lo interpreto come locale)
-        const lastUpdated = dates.sort().pop();
-        return { lastUpdated, targets };
+        const lastUpdated=dates.sort().pop();
+        return {lastUpdated,targets};
       }
 
       function buildCardSkeleton(t){
-        const tpl = qs('#cardTemplate');
-        const frag = tpl.content.cloneNode(true);
-        qs('.target-name', frag).textContent = t.name;
-        qs('.target-total', frag).textContent = `${formatNumber(t.total_frames)} fr · ${humanDuration(t.total_integration_s)}`;
-        const ul = qs('.combos', frag);
-        for (const c of t.combos.sort((a,b)=>a.exp-b.exp || a.gain-b.gain)){
-          const li = document.createElement('li');
-          li.innerHTML = `<div class="d-flex gap-2"><span class="badge badge-exp">${c.exp}s</span><span class="badge badge-gain">GAIN ${c.gain}</span></div><div class="text-end small"><div><strong>${formatNumber(c.frames)}</strong> frames</div><div class="muted">${humanDuration(c.integration_s)}</div></div>`;
+        const tpl=qs('#cardTemplate');
+        const frag=tpl.content.cloneNode(true);
+        qs('.target-name',frag).textContent=t.name;
+        qs('.target-total',frag).textContent=`${formatNumber(t.total_frames)} fr · ${humanDuration(t.total_integration_s)}`;
+        const ul=qs('.combos',frag);
+        for(const c of t.combos.sort((a,b)=>a.exp-b.exp||a.gain-b.gain)){
+          const li=document.createElement('li');
+          li.innerHTML=`<div class="d-flex gap-2"><span class="badge badge-exp">${c.exp}s</span><span class="badge badge-gain">GAIN ${c.gain}</span></div><div class="text-end small"><div><strong>${formatNumber(c.frames)}</strong> frames</div><div class="muted">${humanDuration(c.integration_s)}</div></div>`;
           ul.appendChild(li);
         }
         return frag;
       }
 
-      function initChartForCard(cardRoot, t){
-        const byExp = new Map();
-        for (const c of t.combos){ const key = `${c.exp}s`; byExp.set(key,(byExp.get(key)||0)+c.frames); }
-        const labels = [...byExp.keys()], data = [...byExp.values()], colors = pickColors(labels.length);
-        const canvas = cardRoot.querySelector('canvas');
+      function initChartForCard(cardRoot,t){
+        const byExp=new Map();
+        for(const c of t.combos){const key=`${c.exp}s`;byExp.set(key,(byExp.get(key)||0)+c.frames);}
+        const labels=[...byExp.keys()],data=[...byExp.values()],colors=pickColors(labels.length);
+        const canvas=cardRoot.querySelector('canvas');
         if(!canvas) return;
-        new Chart(canvas.getContext('2d'), {
-          type: 'pie',
-          data: { labels, datasets: [{ data, backgroundColor: colors }] },
-          options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ boxWidth:12 } } } }
-        });
+        new Chart(canvas.getContext('2d'),{type:'pie',data:{labels,datasets:[{data,backgroundColor:colors}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12}}}}});
       }
 
       async function loadLibrary(){
-        const res = await fetch(`libreria.json?ts=${Date.now()}`, { cache:'no-store' });
+        const res=await fetch(`libreria.json?ts=${Date.now()}`,{cache:'no-store'});
         if(!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
       }
 
-      function updateLastUpdated(ts){
-        const el = qs('#lastUpdated');
-        if(!ts){ el.textContent = 'Ultimo aggiornamento: —'; return; }
-        try{
-          // Se è nel formato AAAA-MM-GG
-          if(/^\d{4}-\d{2}-\d{2}$/.test(ts)){
-            const [y,m,d] = ts.split('-').map(Number);
-            const date = new Date(y, m-1, d);
-            el.textContent = `Ultimo aggiornamento: ${date.toLocaleDateString('it-IT')}`;
-          } else {
-            const d = new Date(ts);
-            el.textContent = `Ultimo aggiornamento: ${d.toLocaleString('it-IT')}`;
-          }
-        }catch{ el.textContent = `Ultimo aggiornamento: ${ts}`; }
-      }
+      function updateLastUpdated(ts){const el=qs('#lastUpdated');if(!ts){el.textContent='Ultimo aggiornamento: —';return;}try{if(/^\d{4}-\d{2}-\d{2}$/.test(ts)){const [y,m,d]=ts.split('-').map(Number);const date=new Date(y,m-1,d);el.textContent=`Ultimo aggiornamento: ${date.toLocaleDateString('it-IT')}`;}else{const d=new Date(ts);el.textContent=`Ultimo aggiornamento: ${d.toLocaleString('it-IT')}`;}}catch{el.textContent=`Ultimo aggiornamento: ${ts}`;}}
 
-      function render({ lastUpdated, targets }){
+      function render({lastUpdated,targets}){
         updateLastUpdated(lastUpdated);
-        const cards = qs('#cards');
-        cards.innerHTML = '';
-        const select = qs('#targetFilter');
-
-        if(!targets.length){
-          qs('#emptyState').classList.remove('d-none');
-          select.innerHTML = '<option value="">Tutti</option>';
-          qs('#sumFrames').textContent = '0';
-          qs('#sumIntegration').textContent = '0m';
-          return;
-        }
+        const cards=qs('#cards');cards.innerHTML='';
+        const select=qs('#targetFilter');
+        if(!targets.length){qs('#emptyState').classList.remove('d-none');select.innerHTML='<option value="">Tutti</option>';qs('#sumFrames').textContent='0';qs('#sumIntegration').textContent='0m';return;}
         qs('#emptyState').classList.add('d-none');
-
-        // Popola filtro
-        const current = select.value;
-        select.innerHTML = '<option value="">Tutti</option>' + targets.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');
-        if([...select.options].some(o=>o.value===current)) select.value = current;
-
-        // Appendi cards + poi disegna grafici
-        let sumF=0, sumI=0; const filter = select.value;
-        const toInit = [];
-        for(const t of targets){
-          sumF += t.total_frames; sumI += t.total_integration_s;
-          if(filter && t.name !== filter) continue;
-          const frag = buildCardSkeleton(t);
-          const wrapper = document.createElement('div');
-          wrapper.appendChild(frag);
-          const cardRoot = wrapper.firstElementChild; // .col
-          cards.appendChild(cardRoot);
-          toInit.push([cardRoot, t]);
-        }
-        // Dopo paint
-        requestAnimationFrame(()=> toInit.forEach(([root,t])=> initChartForCard(root, t)) );
-
-        qs('#sumFrames').textContent = formatNumber(sumF);
-        qs('#sumIntegration').textContent = humanDuration(sumI);
+        const current=select.value;select.innerHTML='<option value="">Tutti</option>'+targets.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');if([...select.options].some(o=>o.value===current)) select.value=current;
+        let sumF=0,sumI=0;const filter=select.value;const toInit=[];for(const t of targets){sumF+=t.total_frames;sumI+=t.total_integration_s;if(filter&&t.name!==filter) continue;const frag=buildCardSkeleton(t);const wrapper=document.createElement('div');wrapper.appendChild(frag);const cardRoot=wrapper.firstElementChild;cards.appendChild(cardRoot);toInit.push([cardRoot,t]);}
+        requestAnimationFrame(()=>toInit.forEach(([r,t])=>initChartForCard(r,t)));
+        qs('#sumFrames').textContent=formatNumber(sumF);qs('#sumIntegration').textContent=humanDuration(sumI);
       }
 
-      async function init(){
-        try{
-          const raw = await loadLibrary();
-          const norm = normalizeLibrary(raw);
-          render(norm);
-        }catch(e){
-          console.error(e);
-          updateLastUpdated();
-          qs('#emptyState').classList.remove('d-none');
-          qs('#cards').innerHTML = '';
-        }
-      }
+      async function init(){try{const raw=await loadLibrary();const norm=normalizeLibrary(raw);render(norm);}catch(e){console.error(e);updateLastUpdated();qs('#emptyState').classList.remove('d-none');qs('#cards').innerHTML='';}}
       init();
-      qs('#btnRefresh').addEventListener('click', init);
-      qs('#targetFilter').addEventListener('change', init);
+      qs('#btnRefresh').addEventListener('click',init);
+      qs('#targetFilter').addEventListener('change',init);
     </script>
   </body>
 </html>
