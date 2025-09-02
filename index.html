@@ -175,7 +175,29 @@
         const labels=[...byExp.keys()],data=[...byExp.values()],colors=pickColors(labels.length);
         const canvas=cardRoot.querySelector('canvas');
         if(!canvas) return;
-        new Chart(canvas.getContext('2d'),{type:'pie',data:{labels,datasets:[{data,backgroundColor:colors}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12}}}}});
+
+        // 🔧 distruggi grafico precedente se esiste
+        const existing = Chart.getChart(canvas);
+        if(existing) existing.destroy();
+
+        new Chart(canvas.getContext('2d'),{
+          type:'pie',
+          data:{labels,datasets:[{data,backgroundColor:colors}]},
+          options:{
+            responsive:true,
+            maintainAspectRatio:false,
+            plugins:{
+              legend:{position:'bottom',labels:{boxWidth:12}},
+              tooltip:{callbacks:{
+                label:(ctx)=>{
+                  const v=ctx.raw||0,total=data.reduce((a,b)=>a+b,0)||1;
+                  const pct=Math.round((v/total)*100);
+                  return `${ctx.label}: ${formatNumber(v)} fr (${pct}%)`;
+                }
+              }}
+            }
+          }
+        });
       }
 
       async function init(){
