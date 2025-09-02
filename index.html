@@ -106,7 +106,7 @@
           for(const [key,val] of Object.entries(node)){
             if(!val || typeof val!=="object") continue;
             let exp=0,gain=0,filter="";
-            const m=key.match(/EXP[_\s]?([\d.]+).*GAIN[_\s]?(\d+)(?:[_\-](.+))?/i);
+            const m=key.match(/EXP[_\s]?([\d.]+).*GAIN[_\s]?(\d+)[_\-\s]?(.+)?/i);
             if(m){
               exp=Number(m[1]);
               gain=Number(m[2]);
@@ -182,7 +182,20 @@
         new Chart(canvas.getContext('2d'),{type:'pie',data:{labels,datasets:[{data,backgroundColor:colors}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12}}}}});
       }
 
-      async function init(){try{const raw=await loadLibrary();const norm=normalizeLibrary(raw);render(norm);}catch(e){console.error(e);updateLastUpdated();qs('#emptyState').classList.remove('d-none');qs('#cards').innerHTML='';}}
+      async function init(){
+        try{
+          const raw=await loadLibrary();
+          console.log("📂 libreria.json caricato:", raw);
+          const norm=normalizeLibrary(raw);
+          console.log("✅ normalizzato:", norm);
+          render(norm);
+        }catch(e){
+          console.error("❌ Errore in init():", e);
+          updateLastUpdated();
+          qs('#emptyState').classList.remove('d-none');
+          qs('#cards').innerHTML='';
+        }
+      }
       init();
       qs('#btnRefresh').addEventListener('click',init);
       qs('#targetFilter').addEventListener('change',init);
