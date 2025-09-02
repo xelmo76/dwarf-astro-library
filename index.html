@@ -19,13 +19,9 @@
         --accent: #87b0ff;
         --border-subtle: rgba(255,255,255,0.06);
       }
-      body {
-        background: radial-gradient(1200px 800px at 80% -10%, #11192a 0%, #0b0e14 60%, #0b0e14 100%);
-        color: var(--text-main);
-      }
+      body { background: radial-gradient(1200px 800px at 80% -10%, #11192a 0%, #0b0e14 60%, #0b0e14 100%); color: var(--text-main); }
       .navbar { background: linear-gradient(180deg, rgba(18,24,37,0.9), rgba(18,24,37,0.6)); border-bottom: 1px solid var(--border-subtle); }
       .card { background-color: var(--bg-card); border: 1px solid var(--border-subtle); box-shadow: 0 6px 18px rgba(0,0,0,0.35); }
-      .card-title { letter-spacing: 0.2px; }
       .summary-chip { display:inline-flex; align-items:center; gap:.5rem; padding:.4rem .75rem; border-radius:999px; background:rgba(135,176,255,.12); border:1px solid rgba(135,176,255,.25); color:#cfe0ff; font-weight:600; }
       .muted { color: var(--text-dim); }
       .chart-wrap { position: relative; width: 100%; height: 220px; }
@@ -100,7 +96,7 @@
         if(Object.keys(raw).length===0) return {lastUpdated:undefined,targets:[]};
         const lastUpdated=raw.last_updated||raw.lastUpdated||raw.updated_at;
         const targets=[];
-        let container={};
+        const container={};
         for(const[k,v] of Object.entries(raw)) if(!KNOWN_META_KEYS.has(k)) container[k]=v;
         const asArray=Object.entries(container).map(([name,node])=>({name,...node}));
         for(const item of asArray){
@@ -114,7 +110,7 @@
             const frames=Number(val.frames||val.count||0);
             let integ=Number(val.integration_s||val.integration||val.integration_seconds||0);
             if(!integ&&exp&&frames) integ=exp*frames;
-            if(frames>0) combos.push({exp,gain,frames,integration_s:integ});
+            if(frames>0 || integ>0) combos.push({exp,gain,frames,integration_s:integ});
           }
           const total_frames=combos.reduce((a,c)=>a+c.frames,0);
           const total_integration_s=combos.reduce((a,c)=>a+c.integration_s,0);
@@ -123,16 +119,11 @@
         return {lastUpdated,targets};
       }
 
-      function buildCard(t){
+      function buildCardSkeleton(t){
         const tpl=qs('#cardTemplate');
         const node=tpl.content.cloneNode(true);
         qs('.target-name',node).textContent=t.name;
         qs('.target-total',node).textContent=`${formatNumber(t.total_frames)} fr · ${humanDuration(t.total_integration_s)}`;
-        const byExp=new Map();
-        for(const c of t.combos){const key=`${c.exp}s`;byExp.set(key,(byExp.get(key)||0)+c.frames);}        
-        const labels=[...byExp.keys()],data=[...byExp.values()],colors=pickColors(labels.length);
-        const canvas=node.querySelector('canvas');
-        new Chart(canvas.getContext('2d'),{type:'pie',data:{labels,datasets:[{data,backgroundColor:colors}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12}},tooltip:{callbacks:{label:(ctx)=>{const v=ctx.raw||0,total=data.reduce((a,b)=>a+b,0)||1,pct=Math.round((v/total)*100);return `${ctx.label}: ${formatNumber(v)} fr (${pct}%)`;}}}}}});
         const ul=qs('.combos',node);
         for(const c of t.combos.sort((a,b)=>a.exp-b.exp||a.gain-b.gain)){
           const li=document.createElement('li');
@@ -140,6 +131,15 @@
           ul.appendChild(li);
         }
         return node;
+      }
+
+      function initChartForCard(cardRoot,t){
+        const byExp=new Map();
+        for(const c of t.combos){ const key=`${c.exp}s`; byExp.set(key,(byExp.get(key)||0)+c.frames); }
+        const labels=[...byExp.keys()], data=[...byExp.values()], colors=pickColors(labels.length);
+        const canvas=cardRoot.querySelector('canvas');
+        if(!canvas) return; // safety
+        new Chart(canvas.getContext('2d'),{type:'pie',data:{labels,datasets:[{data,backgroundColor:colors}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12}},tooltip:{callbacks:{label:(ctx)=>{const v=ctx.raw||0,total=data.reduce((a,b)=>a+b,0)||1,pct=Math.round((v/total)*100);return `${ctx.label}: ${formatNumber(v)} fr (${pct}%)`;}}}}}});
       }
 
       async function loadLibrary(){
@@ -155,12 +155,15 @@
         const cards=qs('#cards');cards.innerHTML='';
         if(!targets.length){qs('#emptyState').classList.remove('d-none');qs('#sumFrames').textContent='0';qs('#sumIntegration').textContent='0m';return;}
         qs('#emptyState').classList.add('d-none');
-        let sumF=0,sumI=0;for(const t of targets){sumF+=t.total_frames;sumI+=t.total_integration_s;cards.appendChild(buildCard(t));}
+        let sumF=0,sumI=0;for(const t of targets){sumF+=t.total_frames;sumI+=t.total_integration_s;const frag=buildCardSkeleton(t);const wrapper=document.createElement('div');wrapper.appendChild(frag);const cardRoot=wrapper.firstElementChild;cards.appendChild(cardRoot);requestAnimationFrame(()=>initChartForCard(cardRoot,t));}
         qs('#sumFrames').textContent=formatNumber(sumF);
         qs('#sumIntegration').textContent=humanDuration(sumI);
       }
 
-      async function init(){try{const raw=await loadLibrary();const norm=normalizeLibrary(raw);render(norm);}catch(e){console.error(e);updateLastUpdated();qs('#emptyState').classList.remove('d-none');qs('#cards').innerHTML='';}}
+      async function init(){
+        try{ const raw=await loadLibrary(); const norm=normalizeLibrary(raw); render(norm); }
+        catch(e){ console.error(e); updateLastUpdated(); qs('#emptyState').classList.remove('d-none'); qs('#cards').innerHTML=''; }
+      }
       init();
       qs('#btnRefresh').addEventListener('click',init);
     </script>
