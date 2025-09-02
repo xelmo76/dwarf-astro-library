@@ -6,7 +6,9 @@
   <style>
     body { background:#0a0f25; color:white; font-family:sans-serif; margin:20px; }
     h1 { color:#9fd1ff; }
-    table { width:100%; border-collapse:collapse; margin-top:20px; }
+    select { padding:8px; margin:10px 0; font-size:1em; }
+    .table-container { overflow-x:auto; margin-top:15px; }
+    table { width:100%; border-collapse:collapse; min-width:600px; }
     th, td { padding:8px 12px; border:1px solid #333; text-align:left; }
     th { background:#1c274d; color:#9fd1ff; }
     tr:nth-child(even) { background:#141a33; }
@@ -17,6 +19,10 @@
 </head>
 <body>
   <h1>Astro Dashboard — DWARF 3</h1>
+  <label for="targetSelect">Scegli un target:</label>
+  <select id="targetSelect">
+    <option value="ALL">Tutti</option>
+  </select>
   <div id="content">Caricamento dati...</div>
 
   <script>
@@ -26,55 +32,79 @@
       return `${h}h ${m}m`;
     }
 
-    async function loadLibrary() {
-      const url = "https://raw.githubusercontent.com/xelmo76/dwarf-astro-library/main/libreria.json";
-      try {
-        const res = await fetch(url + "?t=" + Date.now()); // evita cache
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        const data = await res.json();
+    let globalData = {};
 
-        if (Object.keys(data).length === 0) {
-          document.getElementById('content').innerHTML =
-            "<div class='warning'>⚠ Nessun dato presente in libreria.json</div>";
-          return;
-        }
+    function renderTable(selectedTarget) {
+      if (Object.keys(globalData).length === 0) {
+        document.getElementById('content').innerHTML =
+          "<div class='warning'>⚠ Nessun dato presente in libreria.json</div>";
+        return;
+      }
 
-        let html = "<table><tr><th>Target</th><th>Exp/Gain</th><th>Frames</th><th>Integrazione (s)</th><th>Integrazione (h:m)</th><th>Ultimo aggiornamento</th></tr>";
+      let html = '<div class="table-container"><table><tr><th>Target</th><th>Exp/Gain</th><th>Frames</th><th>Integrazione (s)</th><th>Integrazione (h:m)</th><th>Ultimo aggiornamento</th></tr>';
 
-        for (const target in data) {
-          let totalFrames = 0;
-          let totalSeconds = 0;
-          let lastUpdated = "";
+      for (const target in globalData) {
+        if (selectedTarget !== "ALL" && target !== selectedTarget) continue;
 
-          for (const combo in data[target]) {
-            const entry = data[target][combo];
-            totalFrames += entry.frames;
-            totalSeconds += entry.integration_seconds;
-            lastUpdated = entry.last_updated;
+        let totalFrames = 0;
+        let totalSeconds = 0;
+        let lastUpdated = "";
 
-            html += `<tr>
-                      <td>${target}</td>
-                      <td>${combo}</td>
-                      <td>${entry.frames}</td>
-                      <td>${entry.integration_seconds}</td>
-                      <td>${formatTimeHM(entry.integration_seconds)}</td>
-                      <td>${entry.last_updated}</td>
-                    </tr>`;
-          }
+        for (const combo in globalData[target]) {
+          const entry = globalData[target][combo];
+          totalFrames += entry.frames;
+          totalSeconds += entry.integration_seconds;
+          lastUpdated = entry.last_updated;
 
-          const totalFormatted = formatTimeHM(totalSeconds);
-          html += `<tr class="total-row">
+          html += `<tr>
                     <td>${target}</td>
-                    <td>TOTALE</td>
-                    <td>${totalFrames}</td>
-                    <td>${totalSeconds}</td>
-                    <td>${totalFormatted}</td>
-                    <td>${lastUpdated}</td>
+                    <td>${combo}</td>
+                    <td>${entry.frames}</td>
+                    <td>${entry.integration_seconds}</td>
+                    <td>${formatTimeHM(entry.integration_seconds)}</td>
+                    <td>${entry.last_updated}</td>
                   </tr>`;
         }
 
-        html += "</table>";
-        document.getElementById('content').innerHTML = html;
+        const totalFormatted = formatTimeHM(totalSeconds);
+        html += `<tr class="total-row">
+                  <td>${target}</td>
+                  <td>TOTALE</td>
+                  <td>${totalFrames}</td>
+                  <td>${totalSeconds}</td>
+                  <td>${totalFormatted}</td>
+                  <td>${lastUpdated}</td>
+                </tr>`;
+      }
+
+      html += "</table></div>";
+      document.getElementById('content').innerHTML = html;
+    }
+
+    async function loadLibrary() {
+      const url = "https://raw.githubusercontent.com/xelmo76/dwarf-astro-library/main/libreria.json";
+      try {
+        const res = await fetch(url + "?t=" + Date.now());
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        globalData = await res.json();
+
+        // Popola la lista a tendina
+        const select = document.getElementById('targetSelect');
+        for (const target in globalData) {
+          const opt = document.createElement("option");
+          opt.value = target;
+          opt.textContent = target;
+          select.appendChild(opt);
+        }
+
+        // Mostra tutti i target all'inizio
+        renderTable("ALL");
+
+        // Cambia vista al cambio del select
+        select.addEventListener("change", () => {
+          renderTable(select.value);
+        });
+
       } catch(e) {
         document.getElementById('content').innerHTML =
           "<div class='warning'>Errore nel caricamento: " + e + "</div>";
