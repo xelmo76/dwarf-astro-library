@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>DWARF 3 — Libreria Astrofotografia</title>
 
-    <!-- Bootstrap 5 (senza integrity per evitare blocchi SRI su GitHub Pages) -->
+    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous"/>
-    <!-- Chart.js v4 (senza integrity) -->
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 
     <style>
@@ -22,105 +22,61 @@
       body {
         background: radial-gradient(1200px 800px at 80% -10%, #11192a 0%, #0b0e14 60%, #0b0e14 100%);
         color: var(--text-main);
-        font-feature-settings: "ss01" 1, "cv01" 1;
       }
-      .navbar {
-        background: linear-gradient(180deg, rgba(18,24,37,0.9), rgba(18,24,37,0.6));
-        backdrop-filter: blur(6px);
-        border-bottom: 1px solid var(--border-subtle);
-      }
-      .card {
-        background-color: var(--bg-card);
-        border: 1px solid var(--border-subtle);
-        box-shadow: 0 6px 18px rgba(0,0,0,0.35);
-      }
+      .navbar { background: linear-gradient(180deg, rgba(18,24,37,0.9), rgba(18,24,37,0.6)); border-bottom: 1px solid var(--border-subtle); }
+      .card { background-color: var(--bg-card); border: 1px solid var(--border-subtle); box-shadow: 0 6px 18px rgba(0,0,0,0.35); }
       .card-title { letter-spacing: 0.2px; }
-      .summary-chip {
-        display: inline-flex; align-items: center; gap: .5rem; padding: .4rem .75rem;
-        border-radius: 999px; background: rgba(135, 176, 255, 0.12);
-        border: 1px solid rgba(135, 176, 255, 0.25); color: #cfe0ff; font-weight: 600;
-      }
+      .summary-chip { display:inline-flex; align-items:center; gap:.5rem; padding:.4rem .75rem; border-radius:999px; background:rgba(135,176,255,.12); border:1px solid rgba(135,176,255,.25); color:#cfe0ff; font-weight:600; }
       .muted { color: var(--text-dim); }
       .chart-wrap { position: relative; width: 100%; height: 220px; }
       @media (min-width: 992px) { .chart-wrap { height: 240px; } }
-      .list-inline { margin: 0; padding: 0; list-style: none; }
-      .list-inline li {
-        display: flex; justify-content: space-between; gap: 1rem; padding: .4rem .6rem;
-        border-radius: .5rem; border: 1px solid var(--border-subtle); background: rgba(255,255,255,0.02);
-      }
-      .badge-exp { background: rgba(135,176,255,0.15); color: #d5e4ff; border: 1px solid rgba(135,176,255,0.25) }
-      .badge-gain { background: rgba(255,255,255,0.06); color: #dbe6ff; border: 1px solid var(--border-subtle) }
-      .footer { color: var(--text-dim); }
-      .visually-subtle { color: var(--text-dim); font-size: .925rem; }
-      .empty { border: 1px dashed var(--border-subtle); background: rgba(255,255,255,0.02); }
+      .list-inline { margin:0; padding:0; list-style:none; }
+      .list-inline li { display:flex; justify-content:space-between; gap:1rem; padding:.4rem .6rem; border-radius:.5rem; border:1px solid var(--border-subtle); background:rgba(255,255,255,0.02); }
+      .badge-exp { background:rgba(135,176,255,0.15); color:#d5e4ff; border:1px solid rgba(135,176,255,0.25) }
+      .badge-gain { background:rgba(255,255,255,0.06); color:#dbe6ff; border:1px solid var(--border-subtle) }
+      .empty { border:1px dashed var(--border-subtle); background:rgba(255,255,255,0.02); }
     </style>
   </head>
-
   <body>
-    <!-- Header -->
     <nav class="navbar sticky-top">
-      <div class="container py-2">
-        <div class="d-flex align-items-center gap-3">
-          <span class="fs-4 fw-semibold">DWARF 3 · Libreria Astrofotografia</span>
-          <span id="lastUpdated" class="badge text-bg-dark border">Aggiornamento…</span>
-        </div>
+      <div class="container py-2 d-flex justify-content-between">
+        <span class="fs-4 fw-semibold">DWARF 3 · Libreria Astrofotografia</span>
         <div class="d-flex gap-2">
-          <button id="btnRefresh" class="btn btn-sm btn-outline-light" type="button">Aggiorna dati</button>
-          <button id="btnScrollTop" class="btn btn-sm btn-outline-secondary" type="button" title="Torna su">↑</button>
+          <span id="lastUpdated" class="badge text-bg-dark border">Aggiornamento…</span>
+          <button id="btnRefresh" class="btn btn-sm btn-outline-light">Aggiorna dati</button>
         </div>
       </div>
     </nav>
 
     <main class="container my-4">
-      <!-- Summary row -->
       <section id="summary" class="mb-4">
-        <div class="card">
-          <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
-            <div>
-              <h1 class="h4 mb-1">Riepilogo libreria</h1>
-              <div class="visually-subtle">Stato attuale della cartella <code>DWARF_Library</code>.</div>
-            </div>
-            <div class="d-flex flex-wrap gap-2">
-              <div class="summary-chip" title="Frame grezzi totali">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Zm1 2v12h12V6H6Z"/></svg>
-                <span id="sumFrames" class="fs-5">—</span>
-                <span class="muted">frames</span>
-              </div>
-              <div class="summary-chip" title="Tempo d'integrazione totale">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 1.75a10.25 10.25 0 1 0 0 20.5 10.25 10.25 0 0 0 0-20.5Zm0 1.5a8.75 8.75 0 1 1 0 17.5 8.75 8.75 0 0 1 0-17.5ZM11.25 6a.75.75 0 0 1 1.5 0v5.19l3.78 3.78a.75.75 0 1 1-1.06 1.06l-4-4A.75.75 0 0 1 11.25 12V6Z"/></svg>
-                <span id="sumIntegration" class="fs-5">—</span>
-              </div>
-            </div>
+        <div class="card"><div class="card-body d-flex justify-content-between flex-wrap gap-3">
+          <div>
+            <h1 class="h4 mb-1">Riepilogo libreria</h1>
+            <div class="muted">Stato attuale della cartella <code>DWARF_Library</code>.</div>
           </div>
-        </div>
+          <div class="d-flex gap-2 flex-wrap">
+            <div class="summary-chip"><span id="sumFrames">—</span> frames</div>
+            <div class="summary-chip"><span id="sumIntegration">—</span></div>
+          </div>
+        </div></div>
       </section>
 
-      <!-- Empty state / errors -->
       <div id="emptyState" class="d-none">
-        <div class="card empty">
-          <div class="card-body">
-            <h2 class="h5">Libreria vuota</h2>
-            <p class="mb-0">Nessun target disponibile. Quando <code>libreria.json</code> è <code>{}</code> o la cartella è vuota, vedrai questo messaggio.</p>
-          </div>
-        </div>
+        <div class="card empty"><div class="card-body">
+          <h2 class="h5">Libreria vuota</h2>
+          <p class="mb-0">Nessun target disponibile. Quando <code>libreria.json</code> è <code>{}</code> o la cartella è vuota, vedrai questo messaggio.</p>
+        </div></div>
       </div>
 
-      <!-- Cards grid -->
       <section id="cards" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4"></section>
     </main>
-
-    <footer class="footer container my-5">
-      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-        <small>Dashboard generata con <strong>Bootstrap 5</strong> + <strong>Chart.js</strong>. Compatibile con GitHub Pages.</small>
-        <small id="buildInfo" class="text-secondary"></small>
-      </div>
-    </footer>
 
     <template id="cardTemplate">
       <div class="col">
         <div class="card h-100">
           <div class="card-body d-flex flex-column gap-2">
-            <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex justify-content-between">
               <h3 class="card-title h5 mb-0 target-name"></h3>
               <span class="badge rounded-pill text-bg-secondary target-total">—</span>
             </div>
@@ -132,221 +88,81 @@
     </template>
 
     <script>
-      const KNOWN_META_KEYS = new Set([
-        'last_updated','lastUpdated','library_total_frames','library_total_integration_s','total_frames','integrazione','version'
-      ]);
-
+      const KNOWN_META_KEYS = new Set(['last_updated','lastUpdated','library_total_frames','library_total_integration_s','total_frames','integrazione','version']);
       const qs = (sel, el=document) => el.querySelector(sel);
-      const qsa = (sel, el=document) => [...el.querySelectorAll(sel)];
 
-      function humanDuration(seconds) {
-        seconds = Math.max(0, Math.round(seconds||0));
-        const h = Math.floor(seconds/3600);
-        const m = Math.floor((seconds%3600)/60);
-        const s = seconds%60;
-        const parts = [];
-        if (h) parts.push(`${h}h`);
-        if (m || (!h && !s)) parts.push(`${m}m`);
-        if (s && !h) parts.push(`${s}s`);
-        return parts.join(' ');
+      function humanDuration(s){s=Math.max(0,Math.round(s||0));const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;const p=[];if(h)p.push(`${h}h`);if(m||(!h&&!sec))p.push(`${m}m`);if(sec&&!h)p.push(`${sec}s`);return p.join(' ');}
+      function formatNumber(n){return new Intl.NumberFormat('it-IT').format(n);}
+      function pickColors(n){const c=[];for(let i=0;i<n;i++){const hue=Math.round((i*137.508)%360);c.push(`hsl(${hue} 70% 60% / 0.85)`);}return c;}
+
+      function normalizeLibrary(raw){
+        if(!raw||typeof raw!=="object") return {lastUpdated:undefined,targets:[]};
+        if(Object.keys(raw).length===0) return {lastUpdated:undefined,targets:[]};
+        const lastUpdated=raw.last_updated||raw.lastUpdated||raw.updated_at;
+        const targets=[];
+        let container={};
+        for(const[k,v] of Object.entries(raw)) if(!KNOWN_META_KEYS.has(k)) container[k]=v;
+        const asArray=Object.entries(container).map(([name,node])=>({name,...node}));
+        for(const item of asArray){
+          const name=item.name||"Senza nome";
+          const combos=[];
+          for(const [key,val] of Object.entries(item)){
+            if(['name','target','id','total_frames','total_integration_s','combos'].includes(key)) continue;
+            const m=String(key).match(/(\d+(?:\.\d+)?)\s*s?\D+(\d+)/i)||String(key).match(/exp\s*(\d+(?:\.\d+)?)\D+gain\s*(\d+)/i);
+            const exp=m?Number(m[1]):Number(val.exp||val.exposure||0);
+            const gain=m?Number(m[2]):Number(val.gain||0);
+            const frames=Number(val.frames||val.count||0);
+            let integ=Number(val.integration_s||val.integration||val.integration_seconds||0);
+            if(!integ&&exp&&frames) integ=exp*frames;
+            if(frames>0) combos.push({exp,gain,frames,integration_s:integ});
+          }
+          const total_frames=combos.reduce((a,c)=>a+c.frames,0);
+          const total_integration_s=combos.reduce((a,c)=>a+c.integration_s,0);
+          if(combos.length) targets.push({name,combos,total_frames,total_integration_s});
+        }
+        return {lastUpdated,targets};
       }
 
-      function formatNumber(n) { return new Intl.NumberFormat('it-IT').format(n); }
-
-      function pickColors(n) {
-        const colors = [];
-        for (let i=0;i<n;i++) {
-          const hue = Math.round((i*137.508)%360); // angolo aureo
-          colors.push(`hsl(${hue} 70% 60% / 0.85)`);
-        }
-        return colors;
-      }
-
-      // Normalizza libreria.json in uno schema coerente
-      function normalizeLibrary(raw) {
-        if (!raw || typeof raw !== 'object') return { lastUpdated: undefined, targets: [] };
-        if (Object.keys(raw).length === 0) return { lastUpdated: undefined, targets: [] };
-
-        const lastUpdated = raw.last_updated || raw.lastUpdated || raw.updated_at || undefined;
-        const targets = [];
-
-        let container = raw.targets || raw.data || null;
-        if (!container) {
-          container = {};
-          for (const [k,v] of Object.entries(raw)) {
-            if (!KNOWN_META_KEYS.has(k)) container[k] = v;
-          }
-        }
-
-        const asArray = Array.isArray(container) ? container : Object.entries(container).map(([name, node]) => ({ name, ...node }));
-
-        for (const item of asArray) {
-          const name = item.name || item.target || item.id || 'Senza nome';
-          const combos = [];
-
-          if (Array.isArray(item.combos)) {
-            for (const c of item.combos) {
-              const exp = Number(c.exp || c.exposure || c.exposure_s || c.exposure_sec || c.EXP || 0);
-              const gain = Number(c.gain || c.GAIN || c.iso || 0);
-              const frames = Number(c.frames || c.count || 0);
-              let integ = Number(c.integration_s || c.integration || c.seconds || 0);
-              if (!integ && exp && frames) integ = exp * frames;
-              combos.push({ exp, gain, frames, integration_s: integ });
-            }
-          }
-          else if (item.combos && typeof item.combos === 'object') {
-            for (const [key, val] of Object.entries(item.combos)) {
-              const m = String(key).match(/(\d+(?:\.\d+)?)\s*s?\D+(\d+)/i) || String(key).match(/exp\s*(\d+(?:\.\d+)?)\D+gain\s*(\d+)/i);
-              const exp = m ? Number(m[1]) : Number(val.exp || val.exposure || 0);
-              const gain = m ? Number(m[2]) : Number(val.gain || 0);
-              const frames = Number(val.frames || val.count || 0);
-              let integ = Number(val.integration_s || val.integration || 0);
-              if (!integ && exp && frames) integ = exp * frames;
-              combos.push({ exp, gain, frames, integration_s: integ });
-            }
-          }
-          else if (item && typeof item === 'object') {
-            for (const [key, val] of Object.entries(item)) {
-              if (['name','target','id','total_frames','total_integration_s','combos'].includes(key)) continue;
-              const m = String(key).match(/(\d+(?:\.\d+)?)\s*s?\D+(\d+)/i) || String(key).match(/exp\s*(\d+(?:\.\d+)?)\D+gain\s*(\d+)/i);
-              if (!m && typeof val !== 'object') continue;
-              const exp = m ? Number(m[1]) : Number(val.exp || val.exposure || 0);
-              const gain = m ? Number(m[2]) : Number(val.gain || 0);
-              const frames = Number((val && val.frames) || (val && val.count) || 0);
-              let integ = Number((val && (val.integration_s || val.integration)) || 0);
-              if (!integ && exp && frames) integ = exp * frames;
-              combos.push({ exp, gain, frames, integration_s: integ });
-            }
-          }
-
-          const total_frames = combos.reduce((a,c)=>a+(c.frames||0),0);
-          const total_integration_s = combos.reduce((a,c)=>a+(c.integration_s||0),0);
-          if (combos.length) targets.push({ name, combos, total_frames, total_integration_s });
-        }
-
-        return { lastUpdated, targets };
-      }
-
-      function buildCard(target) {
-        const tpl = qs('#cardTemplate');
-        const node = tpl.content.cloneNode(true);
-        qs('.target-name', node).textContent = target.name;
-        qs('.target-total', node).textContent = `${formatNumber(target.total_frames)} fr · ${humanDuration(target.total_integration_s)}`;
-
-        // Pie: frames per EXP
-        const byExp = new Map();
-        for (const c of target.combos) {
-          const key = `${c.exp}s`;
-          byExp.set(key, (byExp.get(key)||0) + (c.frames||0));
-        }
-        const labels = [...byExp.keys()];
-        const data = [...byExp.values()];
-        const colors = pickColors(labels.length);
-
-        const canvas = node.querySelector('canvas');
-        new Chart(canvas.getContext('2d'), {
-          type: 'pie',
-          data: { labels, datasets: [{ data, backgroundColor: colors }] },
-          options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: {
-              legend: { position: 'bottom', labels: { boxWidth: 12 } },
-              tooltip: {
-                callbacks: {
-                  label: (ctx) => {
-                    const value = ctx.raw || 0;
-                    const total = data.reduce((a,b)=>a+b,0) || 1;
-                    const pct = Math.round((value/total)*100);
-                    return `${ctx.label}: ${formatNumber(value)} fr (${pct}%)`;
-                  }
-                }
-              }
-            }
-          }
-        });
-
-        const ul = qs('.combos', node);
-        for (const c of target.combos.sort((a,b)=>a.exp-b.exp || a.gain-b.gain)) {
-          const li = document.createElement('li');
-          li.innerHTML = `
-            <div class="d-flex align-items-center gap-2">
-              <span class="badge rounded-pill badge-exp">${c.exp}s</span>
-              <span class="badge rounded-pill badge-gain">GAIN ${c.gain}</span>
-            </div>
-            <div class="text-end small">
-              <div><strong>${formatNumber(c.frames)}</strong> frames</div>
-              <div class="muted">${humanDuration(c.integration_s)}</div>
-            </div>`;
+      function buildCard(t){
+        const tpl=qs('#cardTemplate');
+        const node=tpl.content.cloneNode(true);
+        qs('.target-name',node).textContent=t.name;
+        qs('.target-total',node).textContent=`${formatNumber(t.total_frames)} fr · ${humanDuration(t.total_integration_s)}`;
+        const byExp=new Map();
+        for(const c of t.combos){const key=`${c.exp}s`;byExp.set(key,(byExp.get(key)||0)+c.frames);}        
+        const labels=[...byExp.keys()],data=[...byExp.values()],colors=pickColors(labels.length);
+        const canvas=node.querySelector('canvas');
+        new Chart(canvas.getContext('2d'),{type:'pie',data:{labels,datasets:[{data,backgroundColor:colors}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12}},tooltip:{callbacks:{label:(ctx)=>{const v=ctx.raw||0,total=data.reduce((a,b)=>a+b,0)||1,pct=Math.round((v/total)*100);return `${ctx.label}: ${formatNumber(v)} fr (${pct}%)`;}}}}}});
+        const ul=qs('.combos',node);
+        for(const c of t.combos.sort((a,b)=>a.exp-b.exp||a.gain-b.gain)){
+          const li=document.createElement('li');
+          li.innerHTML=`<div class="d-flex gap-2"><span class="badge badge-exp">${c.exp}s</span><span class="badge badge-gain">GAIN ${c.gain}</span></div><div class="text-end small"><div><strong>${formatNumber(c.frames)}</strong> frames</div><div class="muted">${humanDuration(c.integration_s)}</div></div>`;
           ul.appendChild(li);
         }
-
         return node;
       }
 
-      async function loadLibrary() {
-        const url = `libreria.json?ts=${Date.now()}`; // cache buster per GH Pages
-        const res = await fetch(url, { cache: 'no-store' });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      async function loadLibrary(){
+        const res=await fetch(`libreria.json?ts=${Date.now()}`,{cache:'no-store'});
+        if(!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
       }
 
-      function updateLastUpdated(ts) {
-        const el = qs('#lastUpdated');
-        if (!ts) { el.textContent = 'Ultimo aggiornamento: sconosciuto'; return; }
-        try {
-          const d = new Date(ts);
-          const fmt = new Intl.DateTimeFormat('it-IT', { dateStyle: 'medium', timeStyle: 'short' });
-          el.textContent = `Ultimo aggiornamento: ${fmt.format(d)}`;
-        } catch { el.textContent = `Ultimo aggiornamento: ${ts}`; }
-      }
+      function updateLastUpdated(ts){const el=qs('#lastUpdated');if(!ts){el.textContent='Ultimo aggiornamento: sconosciuto';return;}try{const d=new Date(ts);el.textContent=`Ultimo aggiornamento: ${d.toLocaleString('it-IT')}`;}catch{el.textContent=`Ultimo aggiornamento: ${ts}`;}}
 
-      function render({ lastUpdated, targets }) {
+      function render({lastUpdated,targets}){
         updateLastUpdated(lastUpdated);
-        const cards = qs('#cards');
-        cards.innerHTML = '';
-
-        if (!targets.length) {
-          qs('#emptyState').classList.remove('d-none');
-          qs('#sumFrames').textContent = '0';
-          qs('#sumIntegration').textContent = '0m';
-          return;
-        }
+        const cards=qs('#cards');cards.innerHTML='';
+        if(!targets.length){qs('#emptyState').classList.remove('d-none');qs('#sumFrames').textContent='0';qs('#sumIntegration').textContent='0m';return;}
         qs('#emptyState').classList.add('d-none');
-
-        let sumFrames = 0, sumInteg = 0;
-        for (const t of targets) {
-          sumFrames += t.total_frames || 0;
-          sumInteg += t.total_integration_s || 0;
-          cards.appendChild(buildCard(t));
-        }
-        qs('#sumFrames').textContent = formatNumber(sumFrames);
-        qs('#sumIntegration').textContent = humanDuration(sumInteg);
+        let sumF=0,sumI=0;for(const t of targets){sumF+=t.total_frames;sumI+=t.total_integration_s;cards.appendChild(buildCard(t));}
+        qs('#sumFrames').textContent=formatNumber(sumF);
+        qs('#sumIntegration').textContent=humanDuration(sumI);
       }
 
-      async function init() {
-        qs('#buildInfo').textContent = `Build: ${new Date().toLocaleString('it-IT')}`;
-        try {
-          const raw = await loadLibrary();
-          const normalized = normalizeLibrary(raw);
-          render(normalized);
-        } catch (err) {
-          console.error(err);
-          updateLastUpdated();
-          qs('#emptyState').classList.remove('d-none');
-          qs('#cards').innerHTML = '';
-          const es = qs('#emptyState .card-body');
-          const p = document.createElement('p');
-          p.className = 'mt-2 text-warning';
-          p.textContent = `Impossibile caricare libreria.json (${err.message}).`;
-          es.appendChild(p);
-        }
-      }
-
+      async function init(){try{const raw=await loadLibrary();const norm=normalizeLibrary(raw);render(norm);}catch(e){console.error(e);updateLastUpdated();qs('#emptyState').classList.remove('d-none');qs('#cards').innerHTML='';}}
       init();
-      qs('#btnRefresh').addEventListener('click', init);
-      qs('#btnScrollTop').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+      qs('#btnRefresh').addEventListener('click',init);
     </script>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
   </body>
 </html>
