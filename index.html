@@ -10,15 +10,16 @@
       font-family:Arial, sans-serif; margin:10px;
     }
     h1 {
-      text-align:center; color:#9fd1ff; margin:10px 0 20px 0;
+      text-align:center; color:#9fd1ff;
+      margin:10px 0 20px 0; font-size:1.8em;
     }
     select {
-      padding:10px; margin:10px auto; display:block;
+      padding:12px; margin:10px auto; display:block;
       font-size:1.1em; border-radius:6px; border:none;
       background:#1a2140; color:white;
     }
 
-    /* Mobile-first: 1 colonna */
+    /* Grid: mobile-first */
     .grid {
       display:grid; gap:20px; margin-top:20px;
       grid-template-columns: 1fr;
@@ -30,30 +31,39 @@
       .grid { grid-template-columns: repeat(3, 1fr); }
     }
 
+    /* Card */
     .card {
       background:#141a33; padding:20px; border-radius:14px;
       box-shadow:0 4px 10px rgba(0,0,0,0.4);
       width:100%;
     }
     .card h2 {
-      margin:0 0 15px 0; color:#9fd1ff; font-size:1.4em;
-      text-align:center;
+      margin:0 0 15px 0; color:#9fd1ff;
+      font-size:1.4em; text-align:center;
     }
 
+    /* Grafico */
     .chart-container {
-      position:relative; width:100%;
-      height:260px; max-width:360px;
+      position:relative;
+      width:100%;
+      height:320px; /* più alto per mobile */
       margin:0 auto 15px auto;
     }
 
+    /* Testi */
     .combo-list { margin-top:10px; font-size:1.05em; }
     .combo-list p { margin:4px 0; }
     .total {
-      margin-top:12px; padding:12px; background:#233366;
-      border-radius:6px; font-weight:bold; text-align:center;
+      margin-top:12px; padding:12px;
+      background:#233366; border-radius:6px;
+      font-weight:bold; text-align:center;
+      font-size:1.1em;
     }
+
     .warning {
-      color:#ff5555; font-weight:bold; text-align:center; padding:20px;
+      color:#ff5555; font-weight:bold;
+      text-align:center; padding:20px;
+      font-size:1.2em;
     }
   </style>
 </head>
@@ -134,7 +144,7 @@
             options: {
               responsive: true,
               maintainAspectRatio: false,
-              plugins: { legend: { position: 'bottom', labels: { color:'white' } } }
+              plugins: { legend: { position: 'bottom', labels: { color:'white', font:{ size: 14 } } } }
             }
           });
         });
