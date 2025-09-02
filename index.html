@@ -131,11 +131,7 @@
         const node=tpl.content.cloneNode(true);
         qs('.target-name',node).textContent=t.name;
         qs('.target-total',node).textContent=`${formatNumber(t.total_frames)} fr · ${humanDuration(t.total_integration_s)}`;
-        const byExp=new Map();
-        for(const c of t.combos){const key=`${c.exp}s`;byExp.set(key,(byExp.get(key)||0)+c.frames);}        
-        const labels=[...byExp.keys()],data=[...byExp.values()],colors=pickColors(labels.length);
-        const canvas=node.querySelector('canvas');
-        if(canvas){new Chart(canvas.getContext('2d'),{type:'pie',data:{labels,datasets:[{data,backgroundColor:colors}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12}},tooltip:{callbacks:{label:(ctx)=>{const v=ctx.raw||0,total=data.reduce((a,b)=>a+b,0)||1,pct=Math.round((v/total)*100);return `${ctx.label}: ${formatNumber(v)} fr (${pct}%)`;}}}}}});}
+
         const ul=qs('.combos',node);
         for(const c of t.combos.sort((a,b)=>a.exp-b.exp||a.gain-b.gain||c.filter.localeCompare(b.filter))){
           const li=document.createElement('li');
