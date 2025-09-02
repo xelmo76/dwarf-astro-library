@@ -68,8 +68,8 @@
   },
   "M 31": {
     "EXP_60_GAIN_60_Astro": {
-      "frames": 210,
-      "integration_seconds": 12600,
+      "frames": 291,
+      "integration_seconds": 17460,
       "last_updated": "2025-09-02"
     }
   },
