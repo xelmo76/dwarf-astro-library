@@ -30,9 +30,9 @@
       .list-inline li { display:flex; justify-content:space-between; gap:1rem; padding:.4rem .6rem; border-radius:.5rem; border:1px solid var(--border-subtle); background:rgba(255,255,255,0.02); }
       .badge-exp { background:rgba(135,176,255,0.15); color:#d5e4ff; border:1px solid rgba(135,176,255,0.25) }
       .badge-gain { background:rgba(255,255,255,0.06); color:#dbe6ff; border:1px solid var(--border-subtle) }
+      .badge-filter { background:rgba(255,200,100,0.15); color:#ffe5b4; border:1px solid rgba(255,200,100,0.25) }
       .empty { border:1px dashed var(--border-subtle); background:rgba(255,255,255,0.02); }
 
-      /* Responsive fix per mobile: navbar colonna */
       @media (max-width: 576px) {
         .navbar .container { flex-direction: column !important; align-items: flex-start !important; gap: .5rem; }
         .navbar .d-flex { flex-wrap: wrap !important; width: 100%; }
@@ -64,7 +64,6 @@
 
       <section id="cards" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4"></section>
 
-      <!-- Summary spostato in fondo -->
       <section id="summary" class="mt-5">
         <div class="card"><div class="card-body d-flex justify-content-between flex-wrap gap-3">
           <div><h1 class="h5 mb-1">Riepilogo libreria</h1></div>
@@ -106,14 +105,18 @@
           const combos=[];
           for(const [key,val] of Object.entries(node)){
             if(!val || typeof val!=="object") continue;
-            let exp=0,gain=0;
-            const m=key.match(/EXP[_\s]?([\d.]+).*GAIN[_\s]?(\d+)/i);
-            if(m){exp=Number(m[1]);gain=Number(m[2]);}
+            let exp=0,gain=0,filter="";
+            const m=key.match(/EXP[_\s]?([\d.]+).*GAIN[_\s]?(\d+)(?:[_\-](.+))?/i);
+            if(m){
+              exp=Number(m[1]);
+              gain=Number(m[2]);
+              if(m[3]) filter=m[3];
+            }
             const frames=Number(val.frames||0);
             let integ=Number(val.integration_seconds||val.integration_s||val.integration||0);
             if(!integ&&exp&&frames) integ=exp*frames;
             if(val.last_updated) dates.push(val.last_updated);
-            if(frames>0||integ>0) combos.push({exp,gain,frames,integration_s:integ});
+            if(frames>0||integ>0) combos.push({exp,gain,filter,frames,integration_s:integ});
           }
           const total_frames=combos.reduce((a,c)=>a+c.frames,0);
           const total_integration_s=combos.reduce((a,c)=>a+c.integration_s,0);
@@ -123,27 +126,31 @@
         return {lastUpdated,targets};
       }
 
-      function buildCardSkeleton(t){
+      function buildCard(t){
         const tpl=qs('#cardTemplate');
-        const frag=tpl.content.cloneNode(true);
-        qs('.target-name',frag).textContent=t.name;
-        qs('.target-total',frag).textContent=`${formatNumber(t.total_frames)} fr · ${humanDuration(t.total_integration_s)}`;
-        const ul=qs('.combos',frag);
-        for(const c of t.combos.sort((a,b)=>a.exp-b.exp||a.gain-b.gain)){
+        const node=tpl.content.cloneNode(true);
+        qs('.target-name',node).textContent=t.name;
+        qs('.target-total',node).textContent=`${formatNumber(t.total_frames)} fr · ${humanDuration(t.total_integration_s)}`;
+        const byExp=new Map();
+        for(const c of t.combos){const key=`${c.exp}s`;byExp.set(key,(byExp.get(key)||0)+c.frames);}        
+        const labels=[...byExp.keys()],data=[...byExp.values()],colors=pickColors(labels.length);
+        const canvas=node.querySelector('canvas');
+        if(canvas){new Chart(canvas.getContext('2d'),{type:'pie',data:{labels,datasets:[{data,backgroundColor:colors}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12}},tooltip:{callbacks:{label:(ctx)=>{const v=ctx.raw||0,total=data.reduce((a,b)=>a+b,0)||1,pct=Math.round((v/total)*100);return `${ctx.label}: ${formatNumber(v)} fr (${pct}%)`;}}}}}});}
+        const ul=qs('.combos',node);
+        for(const c of t.combos.sort((a,b)=>a.exp-b.exp||a.gain-b.gain||c.filter.localeCompare(b.filter))){
           const li=document.createElement('li');
-          li.innerHTML=`<div class="d-flex gap-2"><span class="badge badge-exp">${c.exp}s</span><span class="badge badge-gain">GAIN ${c.gain}</span></div><div class="text-end small"><div><strong>${formatNumber(c.frames)}</strong> frames</div><div class="muted">${humanDuration(c.integration_s)}</div></div>`;
+          li.innerHTML=`<div class="d-flex gap-2 flex-wrap">
+            <span class="badge badge-exp">${c.exp}s</span>
+            <span class="badge badge-gain">GAIN ${c.gain}</span>
+            ${c.filter?`<span class=\"badge badge-filter\">${c.filter}</span>`:""}
+          </div>
+          <div class="text-end small">
+            <div><strong>${formatNumber(c.frames)}</strong> frames</div>
+            <div class="muted">${humanDuration(c.integration_s)}</div>
+          </div>`;
           ul.appendChild(li);
         }
-        return frag;
-      }
-
-      function initChartForCard(cardRoot,t){
-        const byExp=new Map();
-        for(const c of t.combos){const key=`${c.exp}s`;byExp.set(key,(byExp.get(key)||0)+c.frames);}
-        const labels=[...byExp.keys()],data=[...byExp.values()],colors=pickColors(labels.length);
-        const canvas=cardRoot.querySelector('canvas');
-        if(!canvas) return;
-        new Chart(canvas.getContext('2d'),{type:'pie',data:{labels,datasets:[{data,backgroundColor:colors}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12}}}}});
+        return node;
       }
 
       async function loadLibrary(){
@@ -161,9 +168,18 @@
         if(!targets.length){qs('#emptyState').classList.remove('d-none');select.innerHTML='<option value="">Tutti</option>';qs('#sumFrames').textContent='0';qs('#sumIntegration').textContent='0m';return;}
         qs('#emptyState').classList.add('d-none');
         const current=select.value;select.innerHTML='<option value="">Tutti</option>'+targets.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');if([...select.options].some(o=>o.value===current)) select.value=current;
-        let sumF=0,sumI=0;const filter=select.value;const toInit=[];for(const t of targets){sumF+=t.total_frames;sumI+=t.total_integration_s;if(filter&&t.name!==filter) continue;const frag=buildCardSkeleton(t);const wrapper=document.createElement('div');wrapper.appendChild(frag);const cardRoot=wrapper.firstElementChild;cards.appendChild(cardRoot);toInit.push([cardRoot,t]);}
+        let sumF=0,sumI=0;const filter=select.value;const toInit=[];for(const t of targets){sumF+=t.total_frames;sumI+=t.total_integration_s;if(filter&&t.name!==filter) continue;const frag=buildCard(t);const wrapper=document.createElement('div');wrapper.appendChild(frag);const cardRoot=wrapper.firstElementChild;cards.appendChild(cardRoot);toInit.push([cardRoot,t]);}
         requestAnimationFrame(()=>toInit.forEach(([r,t])=>initChartForCard(r,t)));
         qs('#sumFrames').textContent=formatNumber(sumF);qs('#sumIntegration').textContent=humanDuration(sumI);
+      }
+
+      function initChartForCard(cardRoot,t){
+        const byExp=new Map();
+        for(const c of t.combos){const key=`${c.exp}s`;byExp.set(key,(byExp.get(key)||0)+c.frames);}
+        const labels=[...byExp.keys()],data=[...byExp.values()],colors=pickColors(labels.length);
+        const canvas=cardRoot.querySelector('canvas');
+        if(!canvas) return;
+        new Chart(canvas.getContext('2d'),{type:'pie',data:{labels,datasets:[{data,backgroundColor:colors}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12}}}}});
       }
 
       async function init(){try{const raw=await loadLibrary();const norm=normalizeLibrary(raw);render(norm);}catch(e){console.error(e);updateLastUpdated();qs('#emptyState').classList.remove('d-none');qs('#cards').innerHTML='';}}
