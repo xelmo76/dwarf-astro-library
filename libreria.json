@@ -7,9 +7,19 @@
     }
   },
   "C 20": {
+    "EXP_30_GAIN_60_Duo-Band": {
+      "frames": 60,
+      "integration_seconds": 1800,
+      "last_updated": "2025-09-02"
+    },
     "EXP_60_GAIN_60_Duo-Band": {
-      "frames": 180,
-      "integration_seconds": 10800,
+      "frames": 300,
+      "integration_seconds": 18000,
+      "last_updated": "2025-09-02"
+    },
+    "EXP_90_GAIN_60_Duo-Band": {
+      "frames": 45,
+      "integration_seconds": 4050,
       "last_updated": "2025-09-02"
     }
   },
