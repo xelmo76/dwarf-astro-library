@@ -3,156 +3,177 @@
 <head>
   <meta charset="UTF-8">
   <title>Astro Dashboard — DWARF 3</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { background:#0a0f25; color:white; font-family:sans-serif; margin:20px; }
-    h1 { color:#9fd1ff; }
-    select { padding:8px; margin:10px 0; font-size:1em; }
-    .warning { color:#ff5555; font-weight:bold; padding:15px; }
+    body {
+      background:#0a0f25; color:#e0eaff; font-family:Arial, sans-serif;
+      margin:20px;
+    }
+    h1 {
+      text-align:center; color:#9fd1ff; margin-bottom:20px;
+    }
+    select {
+      padding:10px; margin:10px auto; display:block; font-size:1em;
+      border-radius:6px; border:none; background:#1a2140; color:white;
+    }
 
-    /* Stile tabella desktop */
-    .table-container { overflow-x:auto; margin-top:15px; }
-    table { width:100%; border-collapse:collapse; min-width:600px; }
-    th, td { padding:8px 12px; border:1px solid #333; text-align:left; }
-    th { background:#1c274d; color:#9fd1ff; }
-    tr:nth-child(even) { background:#141a33; }
-    tr:nth-child(odd) { background:#1a2140; }
-    .total-row { background:#233366; font-weight:bold; }
+    /* Griglia responsive */
+    .grid {
+      display:grid; gap:20px; margin-top:20px;
+      grid-template-columns: 1fr; /* Default mobile */
+    }
+    @media (min-width:768px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (min-width:1200px) {
+      .grid { grid-template-columns: repeat(3, 1fr); }
+    }
 
-    /* Layout card per mobile */
-    @media (max-width: 768px) {
-      table { display:none; } /* nasconde tabella su mobile */
-      .card { background:#141a33; padding:15px; border-radius:8px; margin:10px 0; }
-      .card h2 { margin:0 0 10px 0; color:#9fd1ff; }
-      .combo { margin-left:15px; }
-      .combo p { margin:3px 0; }
+    /* Card */
+    .card {
+      background:#141a33; padding:15px; border-radius:12px;
+      box-shadow:0 4px 8px rgba(0,0,0,0.3);
+      width:100%;
+      display:flex; flex-direction:column; align-items:center;
+    }
+    .card h2 { margin:0 0 10px 0; color:#9fd1ff; font-size:1.3em; }
+
+    /* Grafico */
+    .chart-container {
+      position:relative;
+      width:100%;
+      max-width:280px;   /* larghezza massima */
+      height:220px;      /* altezza fissa */
+      margin:0 auto 10px auto;
+    }
+
+    .combo-list { margin-top:10px; font-size:0.95em; text-align:left; width:100%; }
+    .combo-list p { margin:2px 0; }
+    .total {
+      margin-top:10px; padding:10px; background:#233366;
+      border-radius:6px; font-weight:bold; width:100%; text-align:center;
+    }
+    .warning {
+      color:#ff5555; font-weight:bold; text-align:center; padding:20px;
     }
   </style>
 </head>
 <body>
   <h1>Astro Dashboard — DWARF 3</h1>
-  <label for="targetSelect">Scegli un target:</label>
-  <select id="targetSelect">
-    <option value="ALL">Tutti</option>
-  </select>
+  <label for="targetSelect" style="text-align:center;display:block;">
+    Scegli un target:
+  </label>
+  <select id="targetSelect"><option value="ALL">Tutti</option></select>
   <div id="content">Caricamento dati...</div>
 
   <script>
-    function formatTimeHM(seconds) {
-      const h = Math.floor(seconds / 3600);
-      const m = Math.floor((seconds % 3600) / 60);
+    function formatHM(s) {
+      const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
       return `${h}h ${m}m`;
+    }
+    function safeId(name) {
+      return name.replace(/\s+/g, "_").replace(/[^\w\-]/g, "");
     }
 
     let globalData = {};
 
-    function renderTable(selectedTarget) {
-      if (Object.keys(globalData).length === 0) {
-        document.getElementById('content').innerHTML =
-          "<div class='warning'>⚠ Nessun dato presente in libreria.json</div>";
+    function render(selectedTarget) {
+      const container = document.getElementById('content');
+      container.innerHTML = '';
+
+      if (!Object.keys(globalData).length) {
+        container.innerHTML = "<div class='warning'>⚠ Nessun dato</div>";
         return;
       }
 
-      // --- Vista desktop: tabella ---
-      let html = '<div class="table-container"><table><tr><th>Target</th><th>Exp/Gain</th><th>Frames</th><th>Integrazione (s)</th><th>Integrazione (h:m)</th><th>Ultimo aggiornamento</th></tr>';
+      const targets = selectedTarget === "ALL" ? Object.keys(globalData) : [selectedTarget];
+      const grid = document.createElement('div'); grid.className = 'grid';
 
-      for (const target in globalData) {
-        if (selectedTarget !== "ALL" && target !== selectedTarget) continue;
-
-        let totalFrames = 0;
-        let totalSeconds = 0;
+      for (const target of targets) {
+        const combos = globalData[target];
+        const labels = [];
+        const values = [];
+        let totalSec = 0;
         let lastUpdated = "";
 
-        for (const combo in globalData[target]) {
-          const entry = globalData[target][combo];
-          totalFrames += entry.frames;
-          totalSeconds += entry.integration_seconds;
-          lastUpdated = entry.last_updated;
-
-          html += `<tr>
-                    <td>${target}</td>
-                    <td>${combo}</td>
-                    <td>${entry.frames}</td>
-                    <td>${entry.integration_seconds}</td>
-                    <td>${formatTimeHM(entry.integration_seconds)}</td>
-                    <td>${entry.last_updated}</td>
-                  </tr>`;
+        for (const combo in combos) {
+          labels.push(combo);
+          values.push(combos[combo].integration_seconds);
+          totalSec += combos[combo].integration_seconds;
+          lastUpdated = combos[combo].last_updated;
         }
 
-        const totalFormatted = formatTimeHM(totalSeconds);
-        html += `<tr class="total-row">
-                  <td>${target}</td>
-                  <td>TOTALE</td>
-                  <td>${totalFrames}</td>
-                  <td>${totalSeconds}</td>
-                  <td>${totalFormatted}</td>
-                  <td>${lastUpdated}</td>
-                </tr>`;
+        const safe = safeId(target);
+        const canvasId = `chart-${safe}`;
+
+        // crea card
+        const card = document.createElement('div'); card.className = 'card';
+        card.innerHTML = `
+          <h2>${target}</h2>
+          <div class="chart-container"><canvas id="${canvasId}"></canvas></div>
+        `;
+
+        // lista combinazioni
+        const comboList = document.createElement('div'); comboList.className = 'combo-list';
+        comboList.innerHTML = labels.map((l,i) => `<p><b>${l}:</b> ${formatHM(values[i])}</p>`).join('');
+        card.appendChild(comboList);
+
+        // totale
+        const totalBlock = document.createElement('div'); totalBlock.className = 'total';
+        totalBlock.innerHTML = `Totale: ${formatHM(totalSec)}<br><small>Aggiornato: ${lastUpdated}</small>`;
+        card.appendChild(totalBlock);
+
+        grid.appendChild(card);
+
+        // disegna grafico
+        requestAnimationFrame(() => {
+          new Chart(document.getElementById(canvasId), {
+            type: 'pie',
+            data: {
+              labels: labels,
+              datasets: [{
+                data: values,
+                backgroundColor: [
+                  '#4fa3ff','#ffb74d','#aed581',
+                  '#e57373','#ba68c8','#ff8a65','#64b5f6'
+                ]
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,  // 🔑 evita grafici giganti
+              plugins: {
+                legend: { position: 'bottom', labels: { color:'white' } }
+              }
+            }
+          });
+        });
       }
 
-      html += "</table></div>";
-
-      // --- Vista mobile: cards ---
-      html += `<div id="cards">`;
-      for (const target in globalData) {
-        if (selectedTarget !== "ALL" && target !== selectedTarget) continue;
-
-        let totalFrames = 0;
-        let totalSeconds = 0;
-        let lastUpdated = "";
-
-        let combosHTML = "";
-        for (const combo in globalData[target]) {
-          const entry = globalData[target][combo];
-          totalFrames += entry.frames;
-          totalSeconds += entry.integration_seconds;
-          lastUpdated = entry.last_updated;
-
-          combosHTML += `
-            <div class="combo">
-              <p><b>${combo}</b> — ${entry.frames} frames, ${entry.integration_seconds}s (${formatTimeHM(entry.integration_seconds)})</p>
-            </div>`;
-        }
-
-        const totalFormatted = formatTimeHM(totalSeconds);
-        html += `
-          <div class="card">
-            <h2>${target}</h2>
-            ${combosHTML}
-            <p><b>Totale:</b> ${totalFrames} frames, ${totalSeconds}s (${totalFormatted})</p>
-            <p><i>Aggiornato: ${lastUpdated}</i></p>
-          </div>`;
-      }
-      html += `</div>`;
-
-      document.getElementById('content').innerHTML = html;
+      container.appendChild(grid);
     }
 
-    async function loadLibrary() {
-      const url = "https://raw.githubusercontent.com/xelmo76/dwarf-astro-library/main/libreria.json";
+    async function init() {
       try {
-        const res = await fetch(url + "?t=" + Date.now());
-        if (!res.ok) throw new Error("HTTP " + res.status);
+        const res = await fetch(
+          'https://raw.githubusercontent.com/xelmo76/dwarf-astro-library/main/libreria.json?t=' + Date.now()
+        );
         globalData = await res.json();
 
         const select = document.getElementById('targetSelect');
-        for (const target in globalData) {
-          const opt = document.createElement("option");
-          opt.value = target;
-          opt.textContent = target;
+        for (const t in globalData) {
+          const opt = document.createElement('option'); opt.value = t; opt.textContent = t;
           select.appendChild(opt);
         }
 
-        renderTable("ALL");
-        select.addEventListener("change", () => {
-          renderTable(select.value);
-        });
-
-      } catch(e) {
+        select.addEventListener('change', () => render(select.value));
+        render('ALL');
+      } catch (e) {
         document.getElementById('content').innerHTML =
-          "<div class='warning'>Errore nel caricamento: " + e + "</div>";
+          "<div class='warning'>Errore nel caricamento JSON: " + e + "</div>";
       }
     }
-    loadLibrary();
+    init();
   </script>
 </body>
 </html>
