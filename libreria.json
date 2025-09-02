@@ -1,1 +1,160 @@
-{}
+{
+  "C 20": {
+    "EXP_60_GAIN_60_60s60_Duo-Band": {
+      "frames": 60,
+      "integration_seconds": 3600,
+      "last_updated": "2025-09-02"
+    },
+    "EXP_60_GAIN_60_Duo-Band": {
+      "frames": 60,
+      "integration_seconds": 3600,
+      "last_updated": "2025-09-02"
+    }
+  },
+  "C 27": {
+    "EXP_15_GAIN_0_15s0_20250823-000103765": {
+      "frames": 14,
+      "integration_seconds": 210,
+      "last_updated": "2025-09-02"
+    },
+    "EXP_15_GAIN_0_20250823-000103765": {
+      "frames": 14,
+      "integration_seconds": 210,
+      "last_updated": "2025-09-02"
+    },
+    "EXP_15_GAIN_60_15s60_Astro": {
+      "frames": 3,
+      "integration_seconds": 45,
+      "last_updated": "2025-09-02"
+    },
+    "EXP_15_GAIN_60_Astro": {
+      "frames": 3,
+      "integration_seconds": 45,
+      "last_updated": "2025-09-02"
+    },
+    "EXP_60_GAIN_0_20250823-002609702": {
+      "frames": 30,
+      "integration_seconds": 1800,
+      "last_updated": "2025-09-02"
+    },
+    "EXP_60_GAIN_0_60s0_20250823-002609702": {
+      "frames": 30,
+      "integration_seconds": 1800,
+      "last_updated": "2025-09-02"
+    }
+  },
+  "HD 194093": {
+    "EXP_30_GAIN_10_20250822-235358690": {
+      "frames": 1,
+      "integration_seconds": 30,
+      "last_updated": "2025-09-02"
+    },
+    "EXP_30_GAIN_10_30s10_20250822-235358690": {
+      "frames": 1,
+      "integration_seconds": 30,
+      "last_updated": "2025-09-02"
+    },
+    "EXP_30_GAIN_60_20250822-235111118": {
+      "frames": 3,
+      "integration_seconds": 90,
+      "last_updated": "2025-09-02"
+    },
+    "EXP_30_GAIN_60_30s60_20250822-235111118": {
+      "frames": 3,
+      "integration_seconds": 90,
+      "last_updated": "2025-09-02"
+    },
+    "EXP_60_GAIN_0_20250822-235629024": {
+      "frames": 2,
+      "integration_seconds": 120,
+      "last_updated": "2025-09-02"
+    },
+    "EXP_60_GAIN_0_60s0_20250822-235629024": {
+      "frames": 2,
+      "integration_seconds": 120,
+      "last_updated": "2025-09-02"
+    },
+    "EXP_60_GAIN_60_60s60_Duo-Band": {
+      "frames": 10,
+      "integration_seconds": 600,
+      "last_updated": "2025-09-02"
+    },
+    "EXP_60_GAIN_60_Duo-Band": {
+      "frames": 10,
+      "integration_seconds": 600,
+      "last_updated": "2025-09-02"
+    }
+  },
+  "HD 199113": {
+    "EXP_60_GAIN_60_60s60_Astro": {
+      "frames": 5,
+      "integration_seconds": 300,
+      "last_updated": "2025-09-02"
+    },
+    "EXP_60_GAIN_60_Astro": {
+      "frames": 5,
+      "integration_seconds": 300,
+      "last_updated": "2025-09-02"
+    }
+  },
+  "M 16": {
+    "EXP_15_GAIN_60_15s60_Duo-Band": {
+      "frames": 53,
+      "integration_seconds": 795,
+      "last_updated": "2025-09-02"
+    },
+    "EXP_15_GAIN_60_Duo-Band": {
+      "frames": 53,
+      "integration_seconds": 795,
+      "last_updated": "2025-09-02"
+    }
+  },
+  "M 31": {
+    "EXP_60_GAIN_60_60s60_Astro": {
+      "frames": 43,
+      "integration_seconds": 2580,
+      "last_updated": "2025-09-02"
+    },
+    "EXP_60_GAIN_60_Astro": {
+      "frames": 43,
+      "integration_seconds": 2580,
+      "last_updated": "2025-09-02"
+    }
+  },
+  "M 33": {
+    "EXP_60_GAIN_60_60s60_Astro": {
+      "frames": 65,
+      "integration_seconds": 3900,
+      "last_updated": "2025-09-02"
+    },
+    "EXP_60_GAIN_60_Astro": {
+      "frames": 65,
+      "integration_seconds": 3900,
+      "last_updated": "2025-09-02"
+    }
+  },
+  "M 45": {
+    "EXP_60_GAIN_60_60s60_Astro": {
+      "frames": 30,
+      "integration_seconds": 1800,
+      "last_updated": "2025-09-02"
+    },
+    "EXP_60_GAIN_60_Astro": {
+      "frames": 30,
+      "integration_seconds": 1800,
+      "last_updated": "2025-09-02"
+    }
+  },
+  "NGC 281": {
+    "EXP_60_GAIN_60_60s60_Duo-Band": {
+      "frames": 22,
+      "integration_seconds": 1320,
+      "last_updated": "2025-09-02"
+    },
+    "EXP_60_GAIN_60_Duo-Band": {
+      "frames": 56,
+      "integration_seconds": 3360,
+      "last_updated": "2025-09-02"
+    }
+  }
+}
