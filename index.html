@@ -94,7 +94,7 @@
       function normalizeLibrary(raw){
         if(!raw||typeof raw!=="object") return {lastUpdated:undefined,targets:[]};
         if(Object.keys(raw).length===0) return {lastUpdated:undefined,targets:[]};
-        const lastUpdated = Object.values(raw).map(t=>Object.values(t).map(c=>c.last_updated).filter(Boolean)).flat().sort().pop();
+        const dates=[];
         const targets=[];
         for(const [name,node] of Object.entries(raw)){
           const combos=[];
@@ -105,12 +105,14 @@
             const frames=Number(val.frames||0);
             let integ=Number(val.integration_s||val.integration||val.integration_seconds||0);
             if(!integ&&exp&&frames) integ=exp*frames;
+            if(val.last_updated) dates.push(val.last_updated);
             if(frames>0||integ>0) combos.push({exp,gain,frames,integration_s:integ});
           }
           const total_frames=combos.reduce((a,c)=>a+c.frames,0);
           const total_integration_s=combos.reduce((a,c)=>a+c.integration_s,0);
           if(combos.length) targets.push({name,combos,total_frames,total_integration_s});
         }
+        const lastUpdated=dates.sort().pop();
         return {lastUpdated,targets};
       }
 
@@ -123,7 +125,7 @@
         for(const c of t.combos){const key=`${c.exp}s`;byExp.set(key,(byExp.get(key)||0)+c.frames);}        
         const labels=[...byExp.keys()],data=[...byExp.values()],colors=pickColors(labels.length);
         const canvas=node.querySelector('canvas');
-        new Chart(canvas.getContext('2d'),{type:'pie',data:{labels,datasets:[{data,backgroundColor:colors}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12}},tooltip:{callbacks:{label:(ctx)=>{const v=ctx.raw||0,total=data.reduce((a,b)=>a+b,0)||1,pct=Math.round((v/total)*100);return `${ctx.label}: ${formatNumber(v)} fr (${pct}%)`;}}}}}});
+        if(canvas){new Chart(canvas.getContext('2d'),{type:'pie',data:{labels,datasets:[{data,backgroundColor:colors}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12}},tooltip:{callbacks:{label:(ctx)=>{const v=ctx.raw||0,total=data.reduce((a,b)=>a+b,0)||1,pct=Math.round((v/total)*100);return `${ctx.label}: ${formatNumber(v)} fr (${pct}%)`;}}}}}});}
         const ul=qs('.combos',node);
         for(const c of t.combos.sort((a,b)=>a.exp-b.exp||a.gain-b.gain)){
           const li=document.createElement('li');
@@ -149,10 +151,7 @@
         let sumF=0,sumI=0;
         const select=qs('#targetFilter');
         select.innerHTML='<option value="">Tutti</option>';
-        for(const t of targets){
-          sumF+=t.total_frames; sumI+=t.total_integration_s;
-          const opt=document.createElement('option'); opt.value=t.name; opt.textContent=t.name; select.appendChild(opt);
-        }
+        for(const t of targets){sumF+=t.total_frames; sumI+=t.total_integration_s; const opt=document.createElement('option'); opt.value=t.name; opt.textContent=t.name; select.appendChild(opt);}
         const filter=select.value;
         for(const t of targets){ if(filter && t.name!==filter) continue; cards.appendChild(buildCard(t)); }
         qs('#sumFrames').textContent=formatNumber(sumF);
