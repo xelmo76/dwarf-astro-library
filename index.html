@@ -1,179 +1,414 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-  <meta charset="UTF-8">
-  <title>Astro Dashboard — DWARF 3</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    body {
-      background:#0a0f25; color:#e0eaff;
-      font-family:Arial, sans-serif; margin:10px;
-    }
-    h1 {
-      text-align:center; color:#9fd1ff;
-      margin:10px 0 20px 0; font-size:1.8em;
-    }
-    select {
-      padding:12px; margin:10px auto; display:block;
-      font-size:1.1em; border-radius:6px; border:none;
-      background:#1a2140; color:white;
-    }
+<!doctype html>
+<html lang="it" data-bs-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DWARF 3 — Libreria Astrofotografia</title>
 
-    /* Grid: mobile-first */
-    .grid {
-      display:grid; gap:20px; margin-top:20px;
-      grid-template-columns: 1fr;
-    }
-    @media (min-width:1024px) {
-      .grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (min-width:1440px) {
-      .grid { grid-template-columns: repeat(3, 1fr); }
-    }
+    <!-- Bootstrap 5 -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
+    />
+    <!-- Chart.js v4 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" integrity="sha384-Tw3t9qGZbT2Qqv1iCs5xQfJdM7+z8sQ8b7hA25s3i3s0n6O1mD9iQ4Gxw4B+S2nR" crossorigin="anonymous"></script>
 
-    /* Card */
-    .card {
-      background:#141a33; padding:20px; border-radius:14px;
-      box-shadow:0 4px 10px rgba(0,0,0,0.4);
-      width:100%;
-    }
-    .card h2 {
-      margin:0 0 15px 0; color:#9fd1ff;
-      font-size:1.4em; text-align:center;
-    }
+    <style>
+      :root {
+        --bg-body: #0b0e14;
+        --bg-card: #121825;
+        --text-main: #e6eefc;
+        --text-dim: #a7b3c4;
+        --accent: #87b0ff;
+        --border-subtle: rgba(255,255,255,0.06);
+      }
+      body {
+        background: radial-gradient(1200px 800px at 80% -10%, #11192a 0%, #0b0e14 60%, #0b0e14 100%);
+        color: var(--text-main);
+        font-feature-settings: "ss01" 1, "cv01" 1;
+      }
+      .navbar {
+        background: linear-gradient(180deg, rgba(18,24,37,0.9), rgba(18,24,37,0.6));
+        backdrop-filter: blur(6px);
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      .card {
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+      }
+      .card-title {
+        letter-spacing: 0.2px;
+      }
+      .summary-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        padding: .4rem .75rem;
+        border-radius: 999px;
+        background: rgba(135, 176, 255, 0.12);
+        border: 1px solid rgba(135, 176, 255, 0.25);
+        color: #cfe0ff;
+        font-weight: 600;
+      }
+      .muted {
+        color: var(--text-dim);
+      }
+      .chart-wrap {
+        position: relative;
+        width: 100%;
+        height: 220px; /* good on phones */
+      }
+      @media (min-width: 992px) {
+        .chart-wrap { height: 240px; }
+      }
+      .list-inline {
+        margin: 0; padding: 0;
+        list-style: none;
+      }
+      .list-inline li {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: .4rem .6rem;
+        border-radius: .5rem;
+        border: 1px solid var(--border-subtle);
+        background: rgba(255,255,255,0.02);
+      }
+      .badge-exp { background: rgba(135, 176, 255, 0.15); color: #d5e4ff; border: 1px solid rgba(135, 176, 255, 0.25)}
+      .badge-gain { background: rgba(255, 255, 255, 0.06); color: #dbe6ff; border: 1px solid var(--border-subtle)}
+      .footer { color: var(--text-dim); }
+      .visually-subtle { color: var(--text-dim); font-size: .925rem; }
+      .empty {
+        border: 1px dashed var(--border-subtle);
+        background: rgba(255,255,255,0.02);
+      }
+    </style>
+  </head>
 
-    /* Grafico */
-    .chart-container {
-      position:relative;
-      width:100%;
-      height:320px; /* più alto per mobile */
-      margin:0 auto 15px auto;
-    }
+  <body>
+    <!-- Header -->
+    <nav class="navbar sticky-top">
+      <div class="container py-2">
+        <div class="d-flex align-items-center gap-3">
+          <span class="fs-4 fw-semibold">DWARF 3 · Libreria Astrofotografia</span>
+          <span id="lastUpdated" class="badge text-bg-dark border">Aggiornamento…</span>
+        </div>
+        <div class="d-flex gap-2">
+          <button id="btnRefresh" class="btn btn-sm btn-outline-light" type="button">Aggiorna dati</button>
+          <button id="btnScrollTop" class="btn btn-sm btn-outline-secondary" type="button" title="Torna su">↑</button>
+        </div>
+      </div>
+    </nav>
 
-    /* Testi */
-    .combo-list { margin-top:10px; font-size:1.05em; }
-    .combo-list p { margin:4px 0; }
-    .total {
-      margin-top:12px; padding:12px;
-      background:#233366; border-radius:6px;
-      font-weight:bold; text-align:center;
-      font-size:1.1em;
-    }
+    <main class="container my-4">
+      <!-- Summary row -->
+      <section id="summary" class="mb-4">
+        <div class="card">
+          <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+              <h1 class="h4 mb-1">Riepilogo libreria</h1>
+              <div class="visually-subtle">Stato attuale della cartella <code>DWARF_Library</code>.</div>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              <div class="summary-chip" title="Frame grezzi totali">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Zm1 2v12h12V6H6Z"/></svg>
+                <span id="sumFrames" class="fs-5">—</span>
+                <span class="muted">frames</span>
+              </div>
+              <div class="summary-chip" title="Tempo d'integrazione totale">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 1.75a10.25 10.25 0 1 0 0 20.5 10.25 10.25 0 0 0 0-20.5Zm0 1.5a8.75 8.75 0 1 1 0 17.5 8.75 8.75 0 0 1 0-17.5ZM11.25 6a.75.75 0 0 1 1.5 0v5.19l3.78 3.78a.75.75 0 1 1-1.06 1.06l-4-4A.75.75 0 0 1 11.25 12V6Z"/></svg>
+                <span id="sumIntegration" class="fs-5">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-    .warning {
-      color:#ff5555; font-weight:bold;
-      text-align:center; padding:20px;
-      font-size:1.2em;
-    }
-  </style>
-</head>
-<body>
-  <h1>Astro Dashboard — DWARF 3</h1>
-  <label for="targetSelect" style="text-align:center;display:block;">
-    Scegli un target:
-  </label>
-  <select id="targetSelect"><option value="ALL">Tutti</option></select>
-  <div id="content">Caricamento dati...</div>
+      <!-- Empty state / errors -->
+      <div id="emptyState" class="d-none">
+        <div class="card empty">
+          <div class="card-body">
+            <h2 class="h5">Libreria vuota</h2>
+            <p class="mb-0">Nessun target disponibile. Quando <code>libreria.json</code> è <code>{}</code> o la cartella è vuota, vedrai questo messaggio.</p>
+          </div>
+        </div>
+      </div>
 
-  <script>
-    function formatHM(s) {
-      const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
-      return `${h}h ${m}m`;
-    }
-    function safeId(name) {
-      return name.replace(/\s+/g, "_").replace(/[^\w\-]/g, "");
-    }
+      <!-- Cards grid -->
+      <section id="cards" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4"></section>
+    </main>
 
-    let globalData = {};
+    <footer class="footer container my-5">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <small>Dashboard generata con <strong>Bootstrap 5</strong> + <strong>Chart.js</strong>. Compatibile con GitHub Pages.</small>
+        <small id="buildInfo" class="text-secondary"></small>
+      </div>
+    </footer>
 
-    function render(selectedTarget) {
-      const container = document.getElementById('content');
-      container.innerHTML = '';
+    <template id="cardTemplate">
+      <div class="col">
+        <div class="card h-100">
+          <div class="card-body d-flex flex-column gap-2">
+            <div class="d-flex align-items-center justify-content-between">
+              <h3 class="card-title h5 mb-0 target-name"></h3>
+              <span class="badge rounded-pill text-bg-secondary target-total">—</span>
+            </div>
+            <div class="chart-wrap"><canvas></canvas></div>
+            <ul class="list-inline d-flex flex-column gap-2 combos"></ul>
+          </div>
+        </div>
+      </div>
+    </template>
 
-      if (!Object.keys(globalData).length) {
-        container.innerHTML = "<div class='warning'>⚠ Nessun dato</div>";
-        return;
+    <script>
+      const KNOWN_META_KEYS = new Set([
+        'last_updated','library_total_frames','library_total_integration_s','total_frames','integrazione','version'
+      ]);
+
+      const qs = (sel, el=document) => el.querySelector(sel);
+      const qsa = (sel, el=document) => [...el.querySelectorAll(sel)];
+
+      function humanDuration(seconds) {
+        seconds = Math.max(0, Math.round(seconds||0));
+        const h = Math.floor(seconds/3600);
+        const m = Math.floor((seconds%3600)/60);
+        const s = seconds%60;
+        const parts = [];
+        if (h) parts.push(`${h}h`);
+        if (m || (!h && !s)) parts.push(`${m}m`);
+        if (s && !h) parts.push(`${s}s`);
+        return parts.join(' ');
       }
 
-      const targets = selectedTarget === "ALL" ? Object.keys(globalData) : [selectedTarget];
-      const grid = document.createElement('div'); grid.className = 'grid';
+      function formatNumber(n) {
+        return new Intl.NumberFormat('it-IT').format(n);
+      }
 
-      for (const target of targets) {
-        const combos = globalData[target];
-        const labels = [], values = [];
-        let totalSec = 0, lastUpdated = "";
+      function pickColors(n) {
+        // Pleasant HSL palette for dark mode
+        const colors = [];
+        for (let i=0;i<n;i++) {
+          const hue = Math.round((i*137.508)%360); // golden angle
+          colors.push(`hsl(${hue} 70% 60% / 0.85)`);
+        }
+        return colors;
+      }
 
-        for (const combo in combos) {
-          labels.push(combo);
-          values.push(combos[combo].integration_seconds);
-          totalSec += combos[combo].integration_seconds;
-          lastUpdated = combos[combo].last_updated;
+      /**
+       * Normalize multiple possible layouts of libreria.json to a single schema:
+       * {
+       *   lastUpdated: string|undefined,
+       *   targets: [
+       *      { name, combos: [{exp, gain, frames, integration_s}], total_frames, total_integration_s }
+       *   ]
+       * }
+       */
+      function normalizeLibrary(raw) {
+        if (!raw || typeof raw !== 'object') return { lastUpdated: undefined, targets: [] };
+        if (Object.keys(raw).length === 0) return { lastUpdated: undefined, targets: [] };
+
+        const lastUpdated = raw.last_updated || raw.lastUpdated || raw.updated_at || undefined;
+        const targets = [];
+
+        // If wrapped in { targets: {...} } or { targets: [...] }
+        let container = raw.targets || raw.data || null;
+        if (!container) {
+          // Otherwise, assume top-level keys are targets except known meta
+          container = {};
+          for (const [k,v] of Object.entries(raw)) {
+            if (!KNOWN_META_KEYS.has(k)) container[k] = v;
+          }
         }
 
-        const safe = safeId(target), canvasId = `chart-${safe}`;
+        const asArray = Array.isArray(container) ? container : Object.entries(container).map(([name, node]) => ({ name, ...node }));
 
-        const card = document.createElement('div'); card.className = 'card';
-        card.innerHTML = `
-          <h2>${target}</h2>
-          <div class="chart-container"><canvas id="${canvasId}"></canvas></div>
-        `;
+        for (const item of asArray) {
+          const name = item.name || item.target || item.id || 'Senza nome';
+          const combos = [];
 
-        const comboList = document.createElement('div'); comboList.className = 'combo-list';
-        comboList.innerHTML = labels.map((l,i) => `<p><b>${l}:</b> ${formatHM(values[i])}</p>`).join('');
-        card.appendChild(comboList);
-
-        const totalBlock = document.createElement('div'); totalBlock.className = 'total';
-        totalBlock.innerHTML = `Totale: ${formatHM(totalSec)}<br><small>Aggiornato: ${lastUpdated}</small>`;
-        card.appendChild(totalBlock);
-
-        grid.appendChild(card);
-
-        requestAnimationFrame(() => {
-          new Chart(document.getElementById(canvasId), {
-            type: 'pie',
-            data: {
-              labels: labels,
-              datasets: [{
-                data: values,
-                backgroundColor: [
-                  '#4fa3ff','#ffb74d','#aed581',
-                  '#e57373','#ba68c8','#ff8a65','#64b5f6'
-                ]
-              }]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { position: 'bottom', labels: { color:'white', font:{ size: 14 } } } }
+          // Case 1: explicit combos array
+          if (Array.isArray(item.combos)) {
+            for (const c of item.combos) {
+              const exp = Number(c.exp || c.exposure || c.exposure_s || c.exposure_sec || c.EXP || 0);
+              const gain = Number(c.gain || c.GAIN || c.iso || 0);
+              const frames = Number(c.frames || c.count || 0);
+              let integ = Number(c.integration_s || c.integration || c.seconds || 0);
+              if (!integ && exp && frames) integ = exp * frames;
+              combos.push({ exp, gain, frames, integration_s: integ });
             }
-          });
-        });
-      }
-      container.appendChild(grid);
-    }
+          }
+          // Case 2: combos object map {"10s_80": {...}}
+          else if (item.combos && typeof item.combos === 'object') {
+            for (const [key, val] of Object.entries(item.combos)) {
+              const m = String(key).match(/(\d+(?:\.\d+)?)\s*s?\D+(\d+)/i) || String(key).match(/exp\s*(\d+(?:\.\d+)?)\D+gain\s*(\d+)/i);
+              const exp = m ? Number(m[1]) : Number(val.exp || val.exposure || 0);
+              const gain = m ? Number(m[2]) : Number(val.gain || 0);
+              const frames = Number(val.frames || val.count || 0);
+              let integ = Number(val.integration_s || val.integration || 0);
+              if (!integ && exp && frames) integ = exp * frames;
+              combos.push({ exp, gain, frames, integration_s: integ });
+            }
+          }
+          // Case 3: target object with combo keys directly
+          else if (item && typeof item === 'object') {
+            for (const [key, val] of Object.entries(item)) {
+              if (['name','target','id','total_frames','total_integration_s','combos'].includes(key)) continue;
+              const m = String(key).match(/(\d+(?:\.\d+)?)\s*s?\D+(\d+)/i) || String(key).match(/exp\s*(\d+(?:\.\d+)?)\D+gain\s*(\d+)/i);
+              if (!m && typeof val !== 'object') continue;
+              const exp = m ? Number(m[1]) : Number(val.exp || val.exposure || 0);
+              const gain = m ? Number(m[2]) : Number(val.gain || 0);
+              const frames = Number((val && val.frames) || (val && val.count) || 0);
+              let integ = Number((val && (val.integration_s || val.integration)) || 0);
+              if (!integ && exp && frames) integ = exp * frames;
+              combos.push({ exp, gain, frames, integration_s: integ });
+            }
+          }
 
-    async function init() {
-      try {
-        const res = await fetch(
-          'https://raw.githubusercontent.com/xelmo76/dwarf-astro-library/main/libreria.json?t=' + Date.now()
-        );
-        globalData = await res.json();
-
-        const select = document.getElementById('targetSelect');
-        for (const t in globalData) {
-          const opt = document.createElement('option');
-          opt.value = t; opt.textContent = t;
-          select.appendChild(opt);
+          const total_frames = combos.reduce((a,c)=>a+(c.frames||0),0);
+          const total_integration_s = combos.reduce((a,c)=>a+(c.integration_s||0),0);
+          if (combos.length) targets.push({ name, combos, total_frames, total_integration_s });
         }
 
-        select.addEventListener('change', () => render(select.value));
-        render('ALL');
-      } catch (e) {
-        document.getElementById('content').innerHTML =
-          "<div class='warning'>Errore nel caricamento JSON: " + e + "</div>";
+        return { lastUpdated, targets };
       }
-    }
-    init();
-  </script>
-</body>
+
+      function buildCard(target) {
+        const tpl = qs('#cardTemplate');
+        const node = tpl.content.cloneNode(true);
+        const root = node.querySelector('.card');
+        qs('.target-name', node).textContent = target.name;
+        qs('.target-total', node).textContent = `${formatNumber(target.total_frames)} fr · ${humanDuration(target.total_integration_s)}`;
+
+        // Pie data by EXP (frames per EXP)
+        const byExp = new Map();
+        for (const c of target.combos) {
+          const key = `${c.exp}s`;
+          byExp.set(key, (byExp.get(key)||0) + (c.frames||0));
+        }
+        const labels = [...byExp.keys()];
+        const data = [...byExp.values()];
+        const colors = pickColors(labels.length);
+
+        const canvas = node.querySelector('canvas');
+        const chart = new Chart(canvas.getContext('2d'), {
+          type: 'pie',
+          data: {
+            labels,
+            datasets: [{ data, backgroundColor: colors }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'bottom', labels: { boxWidth: 12 } },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) => {
+                    const value = ctx.raw || 0;
+                    const total = data.reduce((a,b)=>a+b,0) || 1;
+                    const pct = Math.round((value/total)*100);
+                    return `${ctx.label}: ${formatNumber(value)} fr (${pct}%)`;
+                  }
+                }
+              }
+            }
+          }
+        });
+
+        const ul = qs('.combos', node);
+        for (const c of target.combos.sort((a,b)=>a.exp-b.exp || a.gain-b.gain)) {
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge rounded-pill badge-exp">${c.exp}s</span>
+              <span class="badge rounded-pill badge-gain">GAIN ${c.gain}</span>
+            </div>
+            <div class="text-end small">
+              <div><strong>${formatNumber(c.frames)}</strong> frames</div>
+              <div class="muted">${humanDuration(c.integration_s)}</div>
+            </div>`;
+          ul.appendChild(li);
+        }
+
+        return node;
+      }
+
+      async function loadLibrary() {
+        const url = `libreria.json?ts=${Date.now()}`; // cache buster for GH Pages
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+      }
+
+      function updateLastUpdated(ts) {
+        const el = qs('#lastUpdated');
+        if (!ts) {
+          el.textContent = 'Ultimo aggiornamento: sconosciuto';
+          return;
+        }
+        try {
+          const d = new Date(ts);
+          const fmt = new Intl.DateTimeFormat('it-IT', { dateStyle: 'medium', timeStyle: 'short' });
+          el.textContent = `Ultimo aggiornamento: ${fmt.format(d)}`;
+        } catch {
+          el.textContent = `Ultimo aggiornamento: ${ts}`;
+        }
+      }
+
+      function render({ lastUpdated, targets }) {
+        updateLastUpdated(lastUpdated);
+        const cards = qs('#cards');
+        cards.innerHTML = '';
+
+        if (!targets.length) {
+          qs('#emptyState').classList.remove('d-none');
+          qs('#sumFrames').textContent = '0';
+          qs('#sumIntegration').textContent = '0m';
+          return;
+        }
+        qs('#emptyState').classList.add('d-none');
+
+        let sumFrames = 0, sumInteg = 0;
+        for (const t of targets) {
+          sumFrames += t.total_frames || 0;
+          sumInteg += t.total_integration_s || 0;
+          cards.appendChild(buildCard(t));
+        }
+        qs('#sumFrames').textContent = formatNumber(sumFrames);
+        qs('#sumIntegration').textContent = humanDuration(sumInteg);
+      }
+
+      async function init() {
+        qs('#buildInfo').textContent = `Build: ${new Date().toLocaleString('it-IT')}`;
+        try {
+          const raw = await loadLibrary();
+          const normalized = normalizeLibrary(raw);
+          render(normalized);
+        } catch (err) {
+          console.error(err);
+          updateLastUpdated();
+          qs('#emptyState').classList.remove('d-none');
+          qs('#cards').innerHTML = '';
+          const es = qs('#emptyState .card-body');
+          const p = document.createElement('p');
+          p.className = 'mt-2 text-warning';
+          p.textContent = `Impossibile caricare libreria.json (${err.message}).`;
+          es.appendChild(p);
+        }
+      }
+
+      init();
+      qs('#btnRefresh').addEventListener('click', init);
+      qs('#btnScrollTop').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    </script>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+      crossorigin="anonymous"
+    ></script>
+  </body>
 </html>
