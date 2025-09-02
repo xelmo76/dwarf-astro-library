@@ -7,6 +7,9 @@
     body { background:#0a0f25; color:white; font-family:sans-serif; margin:20px; }
     h1 { color:#9fd1ff; }
     select { padding:8px; margin:10px 0; font-size:1em; }
+    .warning { color:#ff5555; font-weight:bold; padding:15px; }
+
+    /* Stile tabella desktop */
     .table-container { overflow-x:auto; margin-top:15px; }
     table { width:100%; border-collapse:collapse; min-width:600px; }
     th, td { padding:8px 12px; border:1px solid #333; text-align:left; }
@@ -14,7 +17,15 @@
     tr:nth-child(even) { background:#141a33; }
     tr:nth-child(odd) { background:#1a2140; }
     .total-row { background:#233366; font-weight:bold; }
-    .warning { color:#ff5555; font-weight:bold; padding:15px; }
+
+    /* Layout card per mobile */
+    @media (max-width: 768px) {
+      table { display:none; } /* nasconde tabella su mobile */
+      .card { background:#141a33; padding:15px; border-radius:8px; margin:10px 0; }
+      .card h2 { margin:0 0 10px 0; color:#9fd1ff; }
+      .combo { margin-left:15px; }
+      .combo p { margin:3px 0; }
+    }
   </style>
 </head>
 <body>
@@ -41,6 +52,7 @@
         return;
       }
 
+      // --- Vista desktop: tabella ---
       let html = '<div class="table-container"><table><tr><th>Target</th><th>Exp/Gain</th><th>Frames</th><th>Integrazione (s)</th><th>Integrazione (h:m)</th><th>Ultimo aggiornamento</th></tr>';
 
       for (const target in globalData) {
@@ -78,6 +90,40 @@
       }
 
       html += "</table></div>";
+
+      // --- Vista mobile: cards ---
+      html += `<div id="cards">`;
+      for (const target in globalData) {
+        if (selectedTarget !== "ALL" && target !== selectedTarget) continue;
+
+        let totalFrames = 0;
+        let totalSeconds = 0;
+        let lastUpdated = "";
+
+        let combosHTML = "";
+        for (const combo in globalData[target]) {
+          const entry = globalData[target][combo];
+          totalFrames += entry.frames;
+          totalSeconds += entry.integration_seconds;
+          lastUpdated = entry.last_updated;
+
+          combosHTML += `
+            <div class="combo">
+              <p><b>${combo}</b> — ${entry.frames} frames, ${entry.integration_seconds}s (${formatTimeHM(entry.integration_seconds)})</p>
+            </div>`;
+        }
+
+        const totalFormatted = formatTimeHM(totalSeconds);
+        html += `
+          <div class="card">
+            <h2>${target}</h2>
+            ${combosHTML}
+            <p><b>Totale:</b> ${totalFrames} frames, ${totalSeconds}s (${totalFormatted})</p>
+            <p><i>Aggiornato: ${lastUpdated}</i></p>
+          </div>`;
+      }
+      html += `</div>`;
+
       document.getElementById('content').innerHTML = html;
     }
 
@@ -88,7 +134,6 @@
         if (!res.ok) throw new Error("HTTP " + res.status);
         globalData = await res.json();
 
-        // Popola la lista a tendina
         const select = document.getElementById('targetSelect');
         for (const target in globalData) {
           const opt = document.createElement("option");
@@ -97,10 +142,7 @@
           select.appendChild(opt);
         }
 
-        // Mostra tutti i target all'inizio
         renderTable("ALL");
-
-        // Cambia vista al cambio del select
         select.addEventListener("change", () => {
           renderTable(select.value);
         });
