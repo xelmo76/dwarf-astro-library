@@ -112,6 +112,30 @@
       "last_updated": "2025-09-03"
     }
   },
+  "M 17": {
+    "EXP_90_GAIN_60_Duo-Band": {
+      "frames": 41,
+      "integration_seconds": 3690,
+      "last_updated": "2025-09-03"
+    }
+  },
+  "M 20": {
+    "EXP_30_GAIN_60_Duo-Band": {
+      "frames": 120,
+      "integration_seconds": 3600,
+      "last_updated": "2025-09-03"
+    },
+    "EXP_60_GAIN_60_Duo-Band": {
+      "frames": 58,
+      "integration_seconds": 3480,
+      "last_updated": "2025-09-03"
+    },
+    "EXP_90_GAIN_60_Duo-Band": {
+      "frames": 55,
+      "integration_seconds": 4950,
+      "last_updated": "2025-09-03"
+    }
+  },
   "M 3": {
     "EXP_60_GAIN_60_Astro": {
       "frames": 56,
@@ -128,8 +152,15 @@
   },
   "M 33": {
     "EXP_60_GAIN_60_Astro": {
-      "frames": 65,
-      "integration_seconds": 3900,
+      "frames": 137,
+      "integration_seconds": 8220,
+      "last_updated": "2025-09-03"
+    }
+  },
+  "M 42": {
+    "EXP_60_GAIN_60_Duo-Band": {
+      "frames": 105,
+      "integration_seconds": 6300,
       "last_updated": "2025-09-03"
     }
   },
@@ -137,6 +168,28 @@
     "EXP_60_GAIN_60_Astro": {
       "frames": 30,
       "integration_seconds": 1800,
+      "last_updated": "2025-09-03"
+    }
+  },
+  "M 51": {
+    "EXP_30_GAIN_60_Astro": {
+      "frames": 586,
+      "integration_seconds": 17580,
+      "last_updated": "2025-09-03"
+    },
+    "EXP_60_GAIN_60_Astro": {
+      "frames": 60,
+      "integration_seconds": 3600,
+      "last_updated": "2025-09-03"
+    },
+    "EXP_90_GAIN_60_Astro": {
+      "frames": 121,
+      "integration_seconds": 10890,
+      "last_updated": "2025-09-03"
+    },
+    "EXP_90_GAIN_60_Duo-Band": {
+      "frames": 40,
+      "integration_seconds": 3600,
       "last_updated": "2025-09-03"
     }
   },
