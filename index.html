@@ -133,7 +133,7 @@
         qs('.target-total',node).textContent=`${formatNumber(t.total_frames)} fr · ${humanDuration(t.total_integration_s)}`;
 
         const ul=qs('.combos',node);
-        for(const c of t.combos.sort((a,b)=>a.exp-b.exp||a.gain-b.gain||c.filter.localeCompare(b.filter))){
+        for(const c of t.combos.sort((a,b)=> (a.exp-b.exp) || (a.gain-b.gain) || ((a.filter||"").localeCompare(b.filter||"")))){
           const li=document.createElement('li');
           li.innerHTML=`<div class="d-flex gap-2 flex-wrap">
             <span class="badge badge-exp">${c.exp}s</span>
