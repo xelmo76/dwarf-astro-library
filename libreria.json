@@ -350,5 +350,17 @@
       "integration_seconds": 3840,
       "last_updated": "2025-09-20"
     }
+  },
+  "Pelican Nebula": {
+    "EXP_60_GAIN_60_Pelican Nebula": {
+      "frames": 292,
+      "integration_seconds": 17520,
+      "last_updated": "2025-09-20"
+    },
+    "EXP_90_GAIN_60_Pelican Nebula": {
+      "frames": 96,
+      "integration_seconds": 8640,
+      "last_updated": "2025-09-20"
+    }
   }
 }
