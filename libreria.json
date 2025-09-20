@@ -24,11 +24,6 @@
     }
   },
   "C 27": {
-    "EXP_15_GAIN_60_Astro": {
-      "frames": 3,
-      "integration_seconds": 45,
-      "last_updated": "2025-09-20"
-    },
     "EXP_60_GAIN_60_Duo-Band": {
       "frames": 154,
       "integration_seconds": 9240,
