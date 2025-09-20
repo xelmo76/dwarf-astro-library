@@ -1,6 +1,6 @@
 {
   "B 33": {
-    "EXP_60_GAIN_60_Duo-Band_Barnard 33": {
+    "EXP_60_GAIN_60_Duo-Band": {
       "frames": 159,
       "integration_seconds": 9540,
       "last_updated": "2025-09-20"
@@ -119,14 +119,14 @@
     }
   },
   "IC 1805": {
-    "EXP_60_GAIN_60_Duo-Band_Heart Nebula": {
+    "EXP_60_GAIN_60_Duo-Band": {
       "frames": 61,
       "integration_seconds": 3660,
       "last_updated": "2025-09-20"
     }
   },
   "IC 443": {
-    "EXP_60_GAIN_60_Duo-Band_IC 443": {
+    "EXP_60_GAIN_60_Duo-Band": {
       "frames": 94,
       "integration_seconds": 5640,
       "last_updated": "2025-09-20"
@@ -311,7 +311,7 @@
     }
   },
   "M 8": {
-    "EXP_60_GAIN_60_Duo-Band_Lagoon Nebula": {
+    "EXP_60_GAIN_60_Duo-Band": {
       "frames": 130,
       "integration_seconds": 7800,
       "last_updated": "2025-09-20"
@@ -352,12 +352,12 @@
     }
   },
   "Pelican Nebula": {
-    "EXP_60_GAIN_60_Pelican Nebula": {
+    "EXP_60_GAIN_60_Duo-Band": {
       "frames": 292,
       "integration_seconds": 17520,
       "last_updated": "2025-09-20"
     },
-    "EXP_90_GAIN_60_Pelican Nebula": {
+    "EXP_90_GAIN_60_Duo-Band": {
       "frames": 96,
       "integration_seconds": 8640,
       "last_updated": "2025-09-20"
