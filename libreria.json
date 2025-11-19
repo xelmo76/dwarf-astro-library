@@ -1,15 +1,8 @@
 {
   "B 33": {
     "EXP_60_GAIN_60_Duo-Band": {
-      "frames": 159,
-      "integration_seconds": 9540,
-      "last_updated": "2025-11-19"
-    }
-  },
-  "Barnard 33": {
-    "EXP_60_GAIN_60_Duo-Band": {
-      "frames": 60,
-      "integration_seconds": 3600,
+      "frames": 219,
+      "integration_seconds": 13140,
       "last_updated": "2025-11-19"
     }
   },
