@@ -6,6 +6,13 @@
       "last_updated": "2025-11-19"
     }
   },
+  "Barnard 33": {
+    "EXP_60_GAIN_60_Duo-Band": {
+      "frames": 60,
+      "integration_seconds": 3600,
+      "last_updated": "2025-11-19"
+    }
+  },
   "C 1805": {
     "EXP_90_GAIN_60_Duo-Band": {
       "frames": 11,
@@ -213,8 +220,8 @@
       "last_updated": "2025-11-19"
     },
     "EXP_60_GAIN_60_Astro": {
-      "frames": 388,
-      "integration_seconds": 23280,
+      "frames": 457,
+      "integration_seconds": 27420,
       "last_updated": "2025-11-19"
     },
     "EXP_60_GAIN_60_Duo-Band": {
@@ -247,8 +254,8 @@
   },
   "M 42": {
     "EXP_60_GAIN_60_Duo-Band": {
-      "frames": 105,
-      "integration_seconds": 6300,
+      "frames": 195,
+      "integration_seconds": 11700,
       "last_updated": "2025-11-19"
     }
   },
@@ -259,8 +266,8 @@
       "last_updated": "2025-11-19"
     },
     "EXP_60_GAIN_60_Astro": {
-      "frames": 110,
-      "integration_seconds": 6600,
+      "frames": 170,
+      "integration_seconds": 10200,
       "last_updated": "2025-11-19"
     },
     "EXP_90_GAIN_60_Astro": {
