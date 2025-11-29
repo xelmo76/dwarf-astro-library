@@ -1,27 +1,8 @@
 {
-  "B 33": {
-    "EXP_60_GAIN_60_Duo-Band": {
-      "frames": 219,
-      "integration_seconds": 13140,
-      "last_updated": "2025-11-29"
-    }
-  },
   "Barnard 33": {
     "EXP_60_GAIN_60_Duo-Band": {
-      "frames": 70,
-      "integration_seconds": 4200,
-      "last_updated": "2025-11-29"
-    }
-  },
-  "C 1805": {
-    "EXP_60_GAIN_60_Duo-Band": {
-      "frames": 60,
-      "integration_seconds": 3600,
-      "last_updated": "2025-11-29"
-    },
-    "EXP_90_GAIN_60_Duo-Band": {
-      "frames": 11,
-      "integration_seconds": 990,
+      "frames": 289,
+      "integration_seconds": 17340,
       "last_updated": "2025-11-29"
     }
   },
@@ -121,8 +102,13 @@
   },
   "IC 1805": {
     "EXP_60_GAIN_60_Duo-Band": {
-      "frames": 61,
-      "integration_seconds": 3660,
+      "frames": 121,
+      "integration_seconds": 7260,
+      "last_updated": "2025-11-29"
+    },
+    "EXP_90_GAIN_60_Duo-Band": {
+      "frames": 11,
+      "integration_seconds": 990,
       "last_updated": "2025-11-29"
     }
   },
