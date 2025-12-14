@@ -57,13 +57,6 @@
       "last_updated": "2025-12-14"
     }
   },
-  "C 443": {
-    "EXP_60_GAIN_60_Duo-Band": {
-      "frames": 160,
-      "integration_seconds": 9600,
-      "last_updated": "2025-12-14"
-    }
-  },
   "C 50": {
     "EXP_60_GAIN_60_Duo-Band": {
       "frames": 331,
@@ -126,8 +119,8 @@
   },
   "IC 443": {
     "EXP_60_GAIN_60_Duo-Band": {
-      "frames": 94,
-      "integration_seconds": 5640,
+      "frames": 254,
+      "integration_seconds": 15240,
       "last_updated": "2025-12-14"
     }
   },
