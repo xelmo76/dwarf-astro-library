@@ -11,13 +11,6 @@
       "last_updated": "2025-12-31"
     }
   },
-  "C 1805": {
-    "EXP_60_GAIN_60_Duo-Band": {
-      "frames": 60,
-      "integration_seconds": 3600,
-      "last_updated": "2025-12-31"
-    }
-  },
   "C 20": {
     "EXP_30_GAIN_60_Duo-Band": {
       "frames": 60,
@@ -114,8 +107,8 @@
   },
   "IC 1805": {
     "EXP_60_GAIN_60_Duo-Band": {
-      "frames": 121,
-      "integration_seconds": 7260,
+      "frames": 181,
+      "integration_seconds": 10860,
       "last_updated": "2025-12-31"
     },
     "EXP_90_GAIN_60_Duo-Band": {
